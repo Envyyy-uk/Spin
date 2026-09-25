@@ -77,6 +77,57 @@ function range(mid, spread) {
   return { mid, min: mid * (1 - spread), max: mid * (1 + spread) };
 }
 
+// Continental groups used to decide whether a trip can realistically be done overland.
+const LAND_GROUPS = {
+  americas: ['US', 'CA', 'MX', 'BR', 'AR'],
+  africa: ['EG', 'MA', 'TN', 'ZA', 'KE'],
+  asia: ['TH', 'VN', 'CN', 'IN', 'KR', 'JP', 'ID', 'LK', 'MV'],
+};
+// Islands without a practical bus/train link to the mainland.
+const ISLANDS = ['CY', 'MT', 'IS', 'MV', 'LK', 'ID', 'JP', 'NZ', 'AU'];
+const GROUND_POSSIBLE_MAX_KM = 2200;
+
+function landGroup(code) {
+  return Object.keys(LAND_GROUPS).find((g) => LAND_GROUPS[g].includes(code)) || 'eurasia';
+}
+
+/** Whether a bus/train/car trip between the two countries is realistic at all. */
+export function groundPossible(originCode, destCode) {
+  const o = getCountry(originCode);
+  const d = getCountry(destCode);
+  if (!o || !d) return false;
+  if (ISLANDS.includes(originCode) || ISLANDS.includes(destCode)) return false;
+  if (landGroup(originCode) !== landGroup(destCode)) return false;
+  return distanceKm(o, d) <= GROUND_POSSIBLE_MAX_KM;
+}
+
+/** Default mode the cost model assumes for a route. */
+export function defaultMode(originCode, destCode) {
+  const km = distanceKm(getCountry(originCode), getCountry(destCode));
+  return km <= GROUND_TRANSPORT_MAX_KM && groundPossible(originCode, destCode) ? 'ground' : 'flight';
+}
+
+/**
+ * Round-trip transport estimate in EUR (demo model).
+ * `mode` forces 'flight' or 'ground'; otherwise the route's default is used.
+ * @returns {{ mode, km, perPerson: {mid,min,max}, group: {mid,min,max}, groupMid }}
+ */
+export function transportCost({ origin, destination, travellers, transport = 'standard', startDate, today, mode }) {
+  const o = getCountry(origin);
+  const d = getCountry(destination);
+  if (!o || !d) return null;
+  const km = distanceKm(o, d);
+  const m = mode || defaultMode(origin, destination);
+  const people = Math.max(1, Math.round(travellers || 1));
+  const level = TRANSPORT_LEVELS.includes(transport) ? transport : 'standard';
+  // Round trip per person; flights include ~30 EUR of airport transfers.
+  const base = m === 'ground' ? 2 * (12 + 0.08 * km) : 2 * (40 + 0.055 * km) + 30;
+  const pp = base * TRANSPORT_FACTOR[level] * seasonFactor(startDate) * leadTimeFactor(startDate, today);
+  const perPerson = range(pp, SPREAD.transport);
+  const group = range(pp * people, SPREAD.transport);
+  return { mode: m, km, perPerson, group, groupMid: group.mid };
+}
+
 /**
  * Estimate trip costs in EUR.
  * @param {object} p
@@ -105,12 +156,7 @@ export function estimateTripCosts(p) {
   const lead = leadTimeFactor(p.startDate, p.today);
   const style = STYLE_FACTORS[p.style] || { activities: 1, food: 1 };
 
-  const km = distanceKm(origin, dest);
-  const mode = km <= GROUND_TRANSPORT_MAX_KM ? 'ground' : 'flight';
-  // Round trip per person.
-  const perPersonTransport =
-    mode === 'ground' ? 2 * (12 + 0.08 * km) : 2 * (40 + 0.055 * km) + 30; /* +30 airport transfers */
-  const transportMid = perPersonTransport * people * TRANSPORT_FACTOR[transport] * season * lead;
+  const { km, mode, groupMid: transportMid } = transportCost({ ...p, travellers: people, transport });
 
   const accommodationMid = BASE.roomPerNight[stay] * idx * rooms * nights * season;
   const foodMid = BASE.foodPerPersonDay[stay] * idx * people * days * style.food;

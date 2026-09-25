@@ -109,3 +109,21 @@ export function sortedCountries(lang, list = COUNTRIES) {
     }
   });
 }
+
+// IATA city (metropolitan) or main-airport codes for each hub city, used to
+// pre-fill flight searches. Codes only identify the place; they say nothing
+// about whether flights currently operate.
+const IATA = {
+  UA: 'IEV', PL: 'KRK', CZ: 'PRG', SK: 'BTS', HU: 'BUD', RO: 'BUH', BG: 'SOF', MD: 'RMO',
+  GE: 'TBS', AM: 'EVN', TR: 'IST', GR: 'ATH', CY: 'LCA', MT: 'MLA', IT: 'ROM', ES: 'MAD',
+  PT: 'LIS', FR: 'PAR', DE: 'BER', AT: 'VIE', CH: 'ZRH', NL: 'AMS', BE: 'BRU', GB: 'LON',
+  IE: 'DUB', DK: 'CPH', SE: 'STO', NO: 'OSL', FI: 'HEL', IS: 'REK', EE: 'TLL', LV: 'RIX',
+  LT: 'VNO', HR: 'SPU', SI: 'LJU', ME: 'TIV', AL: 'TIA', RS: 'BEG', EG: 'CAI', MA: 'RAK',
+  TN: 'TUN', AE: 'DXB', JO: 'AMM', TH: 'BKK', VN: 'HAN', ID: 'DPS', JP: 'TYO', KR: 'SEL',
+  CN: 'BJS', IN: 'DEL', LK: 'CMB', MV: 'MLE', KZ: 'ALA', UZ: 'TAS', US: 'NYC', CA: 'YTO',
+  MX: 'CUN', BR: 'RIO', AR: 'BUE', ZA: 'CPT', KE: 'NBO', AU: 'SYD', NZ: 'AKL',
+};
+
+export function cityCode(code) {
+  return IATA[code] || null;
+}

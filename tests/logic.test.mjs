@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 
 import { addDays, diffDays, inclusiveDays, parseISO, tripEnd } from '../src/lib/dates.js';
 import { buildRange, durationOptions, parsePositiveInt, parsePositiveNumber, validateSetup } from '../src/lib/validation.js';
-import { estimateTripCosts, seasonFactor } from '../src/services/pricingService.js';
+import { defaultMode, estimateTripCosts, groundPossible, seasonFactor } from '../src/services/pricingService.js';
+import { getTicketOptions } from '../src/services/ticketsService.js';
 import { budgetStatus, savingTips } from '../src/lib/budget.js';
 import { demoSuggestions } from '../src/services/suggestionsService.js';
 import { derive } from '../src/state/derived.js';
@@ -138,4 +139,32 @@ test('plural rules', () => {
   assert.equal(pluralCategory('ru', 22), 'few');
   assert.equal(pluralCategory('fr', 0), 'one');
   assert.equal(pluralCategory('en', 0), 'other');
+});
+
+
+test('ticket options: flight links carry route, dates and passengers', () => {
+  const t = getTicketOptions({ origin: 'PL', destination: 'IT', startDate: '2026-10-25', days: 7, travellers: 3, today: TODAY });
+  assert.equal(t.route.fromCode, 'KRK');
+  assert.equal(t.route.toCode, 'ROM');
+  assert.equal(t.ret, '2026-10-31');
+  const sky = t.modes.flight.providers.find((p) => p.id === 'skyscanner');
+  assert.equal(sky.url, 'https://www.skyscanner.net/transport/flights/krk/rom/261025/261031/?adultsv2=3&cabinclass=economy');
+  const kayak = t.modes.flight.providers.find((p) => p.id === 'kayak');
+  assert.equal(kayak.url, 'https://www.kayak.com/flights/KRK-ROM/2026-10-25/2026-10-31/3adults');
+  assert.ok(t.modes.flight.estimate.group.mid > t.modes.flight.estimate.perPerson.mid);
+  for (const p of [...t.modes.flight.providers, ...t.modes.ground.providers]) assert.match(p.url, /^https:\/\//);
+});
+
+test('overland options only where they make sense', () => {
+  assert.equal(groundPossible('PL', 'CZ'), true);
+  assert.equal(defaultMode('PL', 'CZ'), 'ground');
+  assert.equal(groundPossible('US', 'IT'), false); // different continents
+  assert.equal(groundPossible('GR', 'CY'), false); // island
+  assert.equal(defaultMode('US', 'IT'), 'flight');
+  const t = getTicketOptions({ origin: 'US', destination: 'IT', startDate: '2026-10-25', days: 7, travellers: 2, today: TODAY });
+  assert.equal(t.modes.ground.available, false);
+  assert.equal(t.modes.ground.estimate, null);
+  const near = getTicketOptions({ origin: 'PL', destination: 'CZ', startDate: '2026-10-25', days: 5, travellers: 2, today: TODAY });
+  assert.ok(near.modes.ground.estimate.perPerson.mid < near.modes.flight.estimate.perPerson.mid);
+  assert.ok(near.modes.ground.providers.some((p) => p.id === 'blablacar' && p.url.includes('db=2026-10-25') && p.url.includes('seats=2')));
 });

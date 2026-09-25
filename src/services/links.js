@@ -45,3 +45,32 @@ export function flightsSearch({ from, to, depart, ret, adults }) {
 export function rome2rioSearch({ from, to }) {
   return `https://www.rome2rio.com/map/${enc(from)}/${enc(to)}`;
 }
+
+// --- Tickets -----------------------------------------------------------------
+// Dates are ISO (YYYY-MM-DD). Airport/city codes are IATA.
+
+function yymmdd(iso) {
+  return iso ? iso.slice(2).replace(/-/g, '') : '';
+}
+
+export function skyscannerSearch({ fromCode, toCode, depart, ret, adults }) {
+  const path = [fromCode.toLowerCase(), toCode.toLowerCase(), yymmdd(depart), ret ? yymmdd(ret) : null].filter(Boolean).join('/');
+  return `https://www.skyscanner.net/transport/flights/${path}/?adultsv2=${adults}&cabinclass=economy`;
+}
+
+export function kayakSearch({ fromCode, toCode, depart, ret, adults }) {
+  const dates = [depart, ret].filter(Boolean).join('/');
+  return `https://www.kayak.com/flights/${fromCode}-${toCode}/${dates}/${adults}adults`;
+}
+
+export function transitDirections({ from, to }) {
+  return `https://www.google.com/maps/dir/?api=1&origin=${enc(from)}&destination=${enc(to)}&travelmode=transit`;
+}
+
+export function blablacarSearch({ from, to, depart, adults }) {
+  return `https://www.blablacar.com/search?fn=${enc(from)}&tn=${enc(to)}&db=${depart}&seats=${adults}`;
+}
+
+export function webSearch(query) {
+  return `https://www.google.com/search?q=${enc(query)}`;
+}

@@ -1,4 +1,5 @@
 import { COUNTRIES, getCountry } from '../data/countries.js';
+import { groundPossible } from '../services/pricingService.js';
 import { addDays, diffDays, parseISO, tripEnd } from '../lib/dates.js';
 import {
   MAX_BUDGET_SEGMENTS,
@@ -69,6 +70,8 @@ export function derive(state, today) {
         style: state.styleSettings.enabled ? selection.style : null,
         stay: state.plan.stay,
         transport: state.plan.transport,
+        // Travel mode chosen in the tickets section; null = the model's default for the route.
+        mode: state.plan.mode === 'ground' && !groundPossible(setup.origin, selection.destination) ? null : state.plan.mode || null,
       }
     : null;
 

@@ -34,7 +34,7 @@ export function initialState(today = todayISO(), origin = '') {
     budgetSettings: { min: '500', max: '5000', step: '500' },
     styleSettings: { enabled: false, options: [...STYLE_KEYS] },
     selection: { destination: null, duration: null, budget: null, style: null, tripStart: null },
-    plan: { stay: 'standard', transport: 'standard' },
+    plan: { stay: 'standard', transport: 'standard', mode: null },
     spinCount: 0,
   };
 }
@@ -58,6 +58,8 @@ export function reducer(state, action) {
       const setup = { ...state.setup, ...action.patch };
       const selection = { ...state.selection };
       if (action.patch.origin && selection.destination === action.patch.origin) selection.destination = null;
+      // A travel mode chosen for one route shouldn't carry over to another.
+      if (action.patch.origin && action.patch.origin !== state.setup.origin) return { ...state, setup, selection, plan: { ...state.plan, mode: null } };
       if (action.patch.dateMode || action.patch.windowStart || action.patch.windowEnd) selection.tripStart = null;
       return { ...state, setup, selection };
     }
@@ -92,8 +94,11 @@ export function reducer(state, action) {
       if (styleSettings.enabled === false) selection.style = null;
       return { ...state, styleSettings, selection };
     }
-    case 'select':
-      return { ...state, selection: { ...state.selection, ...action.patch } };
+    case 'select': {
+      const next = { ...state, selection: { ...state.selection, ...action.patch } };
+      if (action.patch.destination && action.patch.destination !== state.selection.destination) next.plan = { ...state.plan, mode: null };
+      return next;
+    }
     case 'plan':
       return { ...state, plan: { ...state.plan, ...action.patch } };
     case 'spinAll':

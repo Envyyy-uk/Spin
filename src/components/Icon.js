@@ -33,6 +33,9 @@ const PATHS = {
   minus: ['M5 12h14'],
   plus: ['M12 5v14', 'M5 12h14'],
   map: ['M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z', 'M9 4v14', 'M15 6v14'],
+  bus: ['M4 11h16', 'M8 14.5v.01', 'M16 14.5v.01', 'M7 18v2', 'M17 18v2', 'M8 7h8'],
+  train: ['M5 10h14', 'M9 13.5v.01', 'M15 13.5v.01', 'M9 17l-2 4', 'M15 17l2 4'],
+  car: ['M3 17v-4l2.2-5h13.6L21 13v4z', 'M3 13h18', 'M7 17v2', 'M17 17v2', 'M7 15v.01', 'M17 15v.01'],
   bulb: ['M9 18h6', 'M10 21h4', 'M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z'],
   // holiday styles
   sea: ['M2 14c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2', 'M2 19c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2', 'M12 4a4 4 0 0 1 4 4H8a4 4 0 0 1 4-4z'],
@@ -61,6 +64,8 @@ const EXTRAS = {
       <Circle cx={10} cy={17} r={2.3} stroke={c} strokeWidth={w} fill="none" />
     </>
   ),
+  bus: (c, w) => <Rect x={4} y={4} width={16} height={14} rx={3} stroke={c} strokeWidth={w} fill="none" />,
+  train: (c, w) => <Rect x={5} y={3} width={14} height={14} rx={3.5} stroke={c} strokeWidth={w} fill="none" />,
   lock: (c, w) => <Rect x={5} y={11} width={14} height={10} rx={2.5} stroke={c} strokeWidth={w} fill="none" />,
   info: (c, w) => <Circle cx={12} cy={12} r={9} stroke={c} strokeWidth={w} fill="none" />,
   adventure: (c, w) => <Circle cx={12} cy={12} r={9} stroke={c} strokeWidth={w} fill="none" />,

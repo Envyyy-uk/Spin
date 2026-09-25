@@ -14,6 +14,7 @@ import { categoryColors, colors, fontFamily, radius, shadowRaised, space, type }
 import { Badge, Button, Card, ErrorText, Eyebrow, Field, H2, H3, Input, Notice, P, SectionHeader, Segmented, Touchable } from '../components/ui';
 import { Icon } from '../components/Icon';
 import { RouteHeader } from '../components/RouteHeader';
+import { TicketsSection } from '../components/TicketsSection';
 import { AnimatedNumber, Reveal, USE_NATIVE_DRIVER, animateNextLayout, useAnimatedFraction, useBreakpoint, useReducedMotion, useAnimatedValue } from '../components/motion';
 import { SelectModal } from '../components/SelectModal';
 import { DateField } from '../components/DateField';
@@ -64,6 +65,7 @@ export function PlanScreen({ state, dispatch, derived, onRespin }) {
           <SummaryCard trip={trip} estimate={estimate} status={status} fx={fx} />
         </Reveal>
       </View>
+      <TicketsSection trip={trip} fx={fx} today={today} budgetMode={trip.mode} onUseMode={(mode) => dispatch({ type: 'plan', patch: { mode } })} />
       <SuggestionsSection trip={trip} fx={fx} lang={lang} />
     </View>
   );
