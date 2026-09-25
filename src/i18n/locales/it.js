@@ -1,5 +1,31 @@
 // Italiano
 export default {
+  hero: {
+    eyebrow: 'Pianificatore di viaggi',
+    title: 'Lascia che la ruota scelga il tuo prossimo viaggio.',
+    lead: 'Imposta date, gruppo e budget, gira per una destinazione e ottieni una stima onesta di quanto potrebbe costare.',
+    cta: 'Inizia a pianificare',
+    resume: 'Continua il mio piano',
+    statDestinations: 'destinazioni',
+    statWheels: 'ruote',
+    statLanguages: 'lingue',
+  },
+  how: {
+    eyebrow: 'Come funziona',
+    title: 'Tre passi tranquilli verso un piano vero',
+    step1: 'Indica le basi',
+    step1Desc: 'Paese di partenza, date, viaggiatori e valuta del budget.',
+    step2: 'Gira le ruote',
+    step2Desc: 'Destinazione, durata, budget e, se vuoi, uno stile di vacanza.',
+    step3: 'Verifica ed esplora',
+    step3Desc: 'Un controllo del budget, consigli per risparmiare e idee per alloggi e attività.',
+    honestTitle: 'Stime oneste, nessun prezzo inventato',
+    honestDesc: 'I costi sono approssimativi e chiaramente indicati. I link aprono veri siti di prenotazione, dove verifichi prezzi e disponibilità attuali.',
+  },
+  plan: {
+    title: 'Il piano del tuo viaggio',
+    lead: 'Tutto in un unico posto: il risultato, il controllo del budget e idee per il viaggio. Cambia qualsiasi cosa e il piano si aggiorna subito.',
+  },
   app: {
     name: 'Spin',
     documentTitle: 'Spin — pianificatore di viaggi',
@@ -10,6 +36,7 @@ export default {
     loading: 'Caricamento…',
   },
   nav: {
+    home: 'Home',
     setup: 'Dati del viaggio',
     wheels: 'Gira',
     plan: 'Il tuo piano',
@@ -41,6 +68,8 @@ export default {
     people: { one: '{count} persona', other: '{count} persone' },
   },
   setup: {
+    groupRoute: 'Itinerario e gruppo',
+    budgetTitle: 'Budget',
     title: 'Da dove parte il tuo viaggio?',
     subtitle: 'Indica le informazioni di base. Potrai cambiare tutto dopo.',
     origin: 'Paese di partenza',
@@ -71,6 +100,7 @@ export default {
     pick: 'Scegli la data',
   },
   wheels: {
+    trayTitle: 'Il tuo viaggio finora',
     title: 'Gira le ruote',
     subtitle: 'Regola ogni ruota e girala, oppure scegli i valori a mano.',
     spinAll: 'Gira tutte le ruote',
@@ -153,6 +183,8 @@ export default {
     noStyle: 'Qualsiasi',
   },
   estimate: {
+    budgetMarker: 'Budget',
+    usedOfBudget: '{pct} del budget',
     title: 'Il budget è realistico?',
     disclaimer: 'Stima approssimativa da un modello di costi dimostrativo, non prezzi attuali. I costi reali dipendono da date, disponibilità e modo di viaggiare.',
     stayLevel: 'Alloggio',
@@ -214,6 +246,10 @@ export default {
     apply: 'Applica',
   },
   suggest: {
+    eyebrow: 'Idee',
+    lead: 'Dove dormire, cosa fare e posti che valgono una deviazione, su misura per il tuo viaggio.',
+    showAll: 'Mostra tutto ({count})',
+    showLess: 'Mostra meno',
     title: 'Dormire, fare e vedere',
     disclaimer: 'Solo esempi. I prezzi sono intervalli dimostrativi approssimativi, non offerte, e la disponibilità non è verificata. Usa i link per cercare opzioni reali per le tue date.',
     apiNote: 'Risultati dal fornitore collegato. Verifica prezzo finale e disponibilità sul sito di prenotazione.',
@@ -281,6 +317,7 @@ export default {
     },
   },
   summary: {
+    eyebrow: 'In breve',
     title: 'Riepilogo del viaggio',
     total: 'Totale stimato',
     budget: 'Budget',

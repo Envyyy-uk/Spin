@@ -1,5 +1,31 @@
 // Deutsch
 export default {
+  hero: {
+    eyebrow: 'Reiseplaner',
+    title: 'Lass das Rad deine nächste Reise wählen.',
+    lead: 'Lege Daten, Gruppe und Budget fest, dreh für ein Reiseziel und erhalte eine ehrliche Schätzung, was die Reise kosten könnte.',
+    cta: 'Planung starten',
+    resume: 'Meinen Plan fortsetzen',
+    statDestinations: 'Reiseziele',
+    statWheels: 'Räder',
+    statLanguages: 'Sprachen',
+  },
+  how: {
+    eyebrow: 'So funktioniert’s',
+    title: 'Drei entspannte Schritte zum echten Plan',
+    step1: 'Eckdaten angeben',
+    step1Desc: 'Abreiseland, Daten, Reisende und Budgetwährung.',
+    step2: 'Räder drehen',
+    step2Desc: 'Reiseziel, Dauer, Budget — und optional eine Urlaubsart.',
+    step3: 'Prüfen und entdecken',
+    step3Desc: 'Ein Budget-Check, Spartipps und Ideen für Unterkünfte und Aktivitäten.',
+    honestTitle: 'Ehrliche Schätzungen, keine erfundenen Preise',
+    honestDesc: 'Kosten sind grob geschätzt und klar gekennzeichnet. Suchlinks öffnen echte Buchungsseiten, auf denen du aktuelle Preise und Verfügbarkeit prüfst.',
+  },
+  plan: {
+    title: 'Dein Reiseplan',
+    lead: 'Alles an einem Ort: dein Ergebnis, der Budget-Check und Ideen für die Reise. Ändere etwas – der Plan aktualisiert sich sofort.',
+  },
   app: {
     name: 'Spin',
     documentTitle: 'Spin — Reiseplaner',
@@ -10,6 +36,7 @@ export default {
     loading: 'Wird geladen…',
   },
   nav: {
+    home: 'Start',
     setup: 'Reisedaten',
     wheels: 'Drehen',
     plan: 'Dein Plan',
@@ -41,6 +68,8 @@ export default {
     people: { one: '{count} Person', other: '{count} Personen' },
   },
   setup: {
+    groupRoute: 'Route & Gruppe',
+    budgetTitle: 'Budget',
     title: 'Wo beginnt deine Reise?',
     subtitle: 'Gib die Eckdaten an. Du kannst alles später ändern.',
     origin: 'Abreiseland',
@@ -71,6 +100,7 @@ export default {
     pick: 'Datum wählen',
   },
   wheels: {
+    trayTitle: 'Deine Reise bisher',
     title: 'Dreh die Räder',
     subtitle: 'Stelle jedes Rad ein und drehe – oder wähle die Werte manuell.',
     spinAll: 'Alle Räder drehen',
@@ -153,6 +183,8 @@ export default {
     noStyle: 'Beliebig',
   },
   estimate: {
+    budgetMarker: 'Budget',
+    usedOfBudget: '{pct} des Budgets',
     title: 'Ist das Budget realistisch?',
     disclaimer: 'Grobe Schätzung aus einem Demo-Kostenmodell – keine aktuellen Preise. Die tatsächlichen Kosten hängen von Daten, Verfügbarkeit und Reiseart ab.',
     stayLevel: 'Unterkunft',
@@ -214,6 +246,10 @@ export default {
     apply: 'Übernehmen',
   },
   suggest: {
+    eyebrow: 'Ideen',
+    lead: 'Unterkünfte, Aktivitäten und Orte, die einen Abstecher wert sind — passend zu deiner Reise.',
+    showAll: 'Alle anzeigen ({count})',
+    showLess: 'Weniger anzeigen',
     title: 'Übernachten, erleben & entdecken',
     disclaimer: 'Nur Beispiele. Die Preise sind grobe Demo-Spannen, keine Angebote, und die Verfügbarkeit wird nicht geprüft. Nutze die Links, um echte Optionen für deine Daten zu suchen.',
     apiNote: 'Ergebnisse deines verbundenen Anbieters. Prüfe Endpreis und Verfügbarkeit auf der Buchungsseite.',
@@ -281,6 +317,7 @@ export default {
     },
   },
   summary: {
+    eyebrow: 'Auf einen Blick',
     title: 'Reiseübersicht',
     total: 'Geschätzte Summe',
     budget: 'Budget',

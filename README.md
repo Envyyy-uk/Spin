@@ -12,6 +12,27 @@ accommodation / activity / sightseeing ideas and a visual trip summary.
 > Suggestion cards are marked **“Example”** and link to public search pages
 > (Booking.com, Airbnb, GetYourGuide, Tripadvisor, Google Maps). Nothing claims availability.
 
+## Design & motion
+
+- **Visual language:** deep-ocean primary, sunset accent and warm sand background; generous spacing,
+  a clear type scale, one set of radii/shadows and an original SVG icon set (`src/theme.js`,
+  `src/components/Icon.js`). A landing screen with a night-sky hero, a self-drawing flight path and a
+  slowly turning preview wheel leads into the three planning steps.
+- **Purposeful animation** built only with React Native `Animated` (no extra animation library):
+  sections fade and rise into view as you scroll, steps slide in the direction of travel, wheels spin
+  with an eased stop and a pointer “tick”, the destination code pops and a plane flies the route when
+  the destination changes, the budget bar, category bars and totals animate to new values, settings
+  panels and suggestion groups expand smoothly, and suggestions load with skeleton cards.
+- **Reduced motion:** when the OS/browser asks for less motion, reveals and step transitions are
+  skipped, decorative loops stop and wheels land almost instantly. Everything works without animation.
+- **Layouts for three sizes:** phone (< 600), tablet (600–1023) and desktop (≥ 1024) each get their own
+  arrangement: a bottom sheet vs centred dialogs, one vs two wheel columns, a sticky summary column
+  on desktop, and a sticky bottom action bar with your live selection on the wheels step.
+- **States and accessibility:** hover, pressed, selected, disabled, loading, error and empty states;
+  keyboard focus rings (shown for keyboard use only); the budget indicator uses an icon shape, text
+  percentage, a labelled budget marker and a hatched over-budget segment, so it never relies on
+  colour alone.
+
 ## Features
 
 - **7 UI languages**: English (default), Ukrainian, Russian, Spanish, French, German, Italian.
@@ -71,10 +92,11 @@ All native modules used (`react-native-svg`, `@react-native-async-storage/async-
 `@react-native-community/datetimepicker`, `expo-localization`, `react-native-safe-area-context`)
 are included in Expo Go, so no custom build is needed for development.
 
-### Tests
+### Tests and lint
 
 ```bash
-npm test
+npm test      # logic + locale completeness
+npm run lint  # ESLint with eslint-config-expo (includes React Compiler hook rules)
 ```
 
 Runs the Node test suite in `tests/`: dates, validation, the cost model, budget tips,
@@ -98,7 +120,7 @@ To do so:
 ## Project structure
 
 ```
-App.js                     App shell: header, language switcher, step navigation
+App.js                     App shell: header, language switcher, landing + step navigation
 src/i18n/                  I18nProvider, translate() with English fallback, plural rules
 src/i18n/locales/*.js      All UI strings, one file per language (edit/extend here)
 src/data/                  Countries (names in 7 languages, demo price index), currencies, highlights
@@ -106,7 +128,8 @@ src/lib/                   Pure logic: dates, validation, formatting, budget ana
 src/services/              Integration layer: pricingService (demo model), suggestionsService,
                            links (search URLs), config (env-based, no secrets)
 src/state/                 Reducer + persistence (store.js) and pure derived state (derived.js)
-src/components/            Wheel, WheelCard, SelectModal, DateField, BudgetBar, UI primitives
+src/components/            Wheel, WheelCard, Hero, RouteHeader, BudgetBar, SelectModal, DateField,
+                           Icon (SVG icon set), motion (reveal/transition/reduced-motion helpers), UI primitives
 src/screens/               SetupScreen, WheelsScreen, PlanScreen
 tests/                     node:test suites
 ```

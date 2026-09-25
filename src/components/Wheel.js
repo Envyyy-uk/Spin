@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Easing, PanResponder, Platform, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Platform, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, G, Path, Text as SvgText } from 'react-native-svg';
 import { useI18n } from '../i18n';
-import { colors, fontFamily, wheelPalette } from '../theme';
+import { colors, fontFamily, motion, shadow, wheelPalette } from '../theme';
 import { Touchable } from './ui';
+import { Icon } from './Icon';
+import { usePop, useReducedMotion, useAnimatedValue } from './motion';
 
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
@@ -56,19 +58,24 @@ function segmentColor(i, n) {
 export function Wheel({ title, options, selectedIndex, onSelect, spinSignal, size = 260, disabled }) {
   const { t } = useI18n();
   const n = options.length;
-  const rotation = useRef(new Animated.Value(0)).current;
+  const rotation = useAnimatedValue(0);
   const current = useRef(0);
   const [spinning, setSpinning] = useState(false);
   const spinningRef = useRef(false);
-  const reduceMotion = useRef(false);
-
+  const reduced = useReducedMotion();
+  const reduceMotion = useRef(reduced);
   useEffect(() => {
-    AccessibilityInfo.isReduceMotionEnabled?.()
-      .then((v) => {
-        reduceMotion.current = !!v;
-      })
-      .catch(() => {});
-  }, []);
+    reduceMotion.current = reduced;
+  }, [reduced]);
+  const tick = useAnimatedValue(0);
+  const resultPop = usePop(selectedIndex);
+
+  // Pointer "tick" when the wheel lands.
+  const nudgePointer = useCallback(() => {
+    if (reduceMotion.current) return;
+    tick.setValue(1);
+    Animated.spring(tick, { toValue: 0, friction: 3, tension: 180, useNativeDriver: USE_NATIVE_DRIVER }).start();
+  }, [tick]);
 
   const animateTo = useCallback(
     (index, { full, onDone } = {}) => {
@@ -82,7 +89,7 @@ export function Wheel({ title, options, selectedIndex, onSelect, spinSignal, siz
       if (full) delta += 360 * (4 + Math.floor(Math.random() * 3));
       else if (delta > 180) delta -= 360; // shortest way for small steps
       const to = from + delta;
-      const duration = reduceMotion.current ? 250 : full ? 3600 + Math.random() * 800 : 350;
+      const duration = reduceMotion.current ? 200 : full ? motion.spin + Math.random() * 700 : 380;
       spinningRef.current = true;
       setSpinning(true);
       Animated.timing(rotation, {
@@ -94,10 +101,11 @@ export function Wheel({ title, options, selectedIndex, onSelect, spinSignal, siz
         current.current = to;
         spinningRef.current = false;
         setSpinning(false);
+        if (full) nudgePointer();
         onDone?.();
       });
     },
-    [n, rotation],
+    [n, rotation, nudgePointer],
   );
 
   const spin = useCallback(() => {
@@ -131,14 +139,26 @@ export function Wheel({ title, options, selectedIndex, onSelect, spinSignal, siz
     }
   }, [spinSignal, spin]);
 
-  const pan = useRef(null);
-  pan.current = PanResponder.create({
-    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
-    onPanResponderRelease: (_, g) => {
-      if (Math.abs(g.vx) > 0.2 || Math.abs(g.dx) > 40) spin();
+  // Swipe (touch or mouse drag) to spin, via the responder system's event props.
+  const gesture = useRef({ x: 0, y: 0, t: 0 });
+  const swipeHandlers = {
+    onStartShouldSetResponderCapture: (e) => {
+      const { pageX, pageY } = e.nativeEvent;
+      gesture.current = { x: pageX, y: pageY, t: Date.now() };
+      return false; // let taps reach the wheel button
     },
-    onPanResponderTerminationRequest: () => true,
-  });
+    onMoveShouldSetResponderCapture: (e) => {
+      const dx = e.nativeEvent.pageX - gesture.current.x;
+      const dy = e.nativeEvent.pageY - gesture.current.y;
+      return Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.5;
+    },
+    onResponderTerminationRequest: () => true,
+    onResponderRelease: (e) => {
+      const dx = e.nativeEvent.pageX - gesture.current.x;
+      const velocity = Math.abs(dx) / Math.max(1, Date.now() - gesture.current.t);
+      if (velocity > 0.2 || Math.abs(dx) > 40) spin();
+    },
+  };
 
   const cx = size / 2;
   const cy = size / 2;
@@ -163,7 +183,7 @@ export function Wheel({ title, options, selectedIndex, onSelect, spinSignal, siz
 
   return (
     <View style={styles.container}>
-      <View style={[styles.wheelWrap, { width: size, height: size + 14 }]} {...pan.current.panHandlers}>
+      <View style={[styles.wheelWrap, { width: size, height: size + 14 }]} {...swipeHandlers}>
         <Touchable
           accessibilityRole="button"
           accessibilityLabel={t('wheels.a11yWheel', { title, value: current_ })}
@@ -215,11 +235,15 @@ export function Wheel({ title, options, selectedIndex, onSelect, spinSignal, siz
             </Svg>
           </Animated.View>
         </Touchable>
-        <View style={styles.pointer} pointerEvents="none" aria-hidden>
+        <Animated.View
+          style={[styles.pointer, { transform: [{ rotate: tick.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '-22deg'] }) }] }]}
+          pointerEvents="none"
+          aria-hidden
+        >
           <Svg width={28} height={30} viewBox="0 0 28 30">
-            <Path d="M14 30 L2 4 Q14 -2 26 4 Z" fill={colors.coral} stroke={colors.surface} strokeWidth={2} />
+            <Path d="M14 30 L2 4 Q14 -2 26 4 Z" fill={colors.accent} stroke={colors.surface} strokeWidth={2} />
           </Svg>
-        </View>
+        </Animated.View>
       </View>
       <View style={styles.controls}>
         <Touchable
@@ -227,33 +251,36 @@ export function Wheel({ title, options, selectedIndex, onSelect, spinSignal, siz
           accessibilityLabel={t('wheels.prev')}
           disabled={disabled || n < 2}
           onPress={() => step(-1)}
-          style={[styles.stepBtn, (disabled || n < 2) && { opacity: 0.4 }]}
+          style={({ hovered }) => [styles.stepBtn, hovered && styles.stepBtnHover, (disabled || n < 2) && { opacity: 0.4 }]}
         >
-          <Text style={styles.stepText}>‹</Text>
+          <Icon name="chevronLeft" size={22} color={colors.primaryDark} strokeWidth={2.4} />
         </Touchable>
         <Touchable
           accessibilityRole="button"
           accessibilityLabel={`${t('wheels.spin')}: ${title}`}
           disabled={disabled || n < 1 || spinning}
           onPress={spin}
-          style={({ pressed }) => [styles.spinBtn, pressed && { backgroundColor: colors.primaryDark }, (disabled || n < 1) && { opacity: 0.45 }]}
+          style={({ pressed, hovered }) => [styles.spinBtn, (pressed || hovered) && { backgroundColor: colors.primaryDark }, pressed && { transform: [{ scale: 0.97 }] }, (disabled || n < 1) && { opacity: 0.45 }]}
         >
-          <Text style={styles.spinText}>{spinning ? t('wheels.spinning') : `⟳ ${t('wheels.spin')}`}</Text>
+          <Icon name="spin" size={18} color={colors.onPrimary} strokeWidth={2.4} />
+          <Text style={styles.spinText}>{spinning ? t('wheels.spinning') : t('wheels.spin')}</Text>
         </Touchable>
         <Touchable
           accessibilityRole="button"
           accessibilityLabel={t('wheels.next')}
           disabled={disabled || n < 2}
           onPress={() => step(1)}
-          style={[styles.stepBtn, (disabled || n < 2) && { opacity: 0.4 }]}
+          style={({ hovered }) => [styles.stepBtn, hovered && styles.stepBtnHover, (disabled || n < 2) && { opacity: 0.4 }]}
         >
-          <Text style={styles.stepText}>›</Text>
+          <Icon name="chevronRight" size={22} color={colors.primaryDark} strokeWidth={2.4} />
         </Touchable>
       </View>
-      <Text style={styles.result} accessibilityLiveRegion="polite" aria-live="polite">
-        {spinning ? t('wheels.spinning') : `${t('wheels.result')}: `}
-        {!spinning ? <Text style={styles.resultValue}>{current_}</Text> : null}
-      </Text>
+      <Animated.View style={[styles.resultBox, selectedIndex >= 0 && !spinning && styles.resultBoxOn, { transform: [{ scale: resultPop }] }]}>
+        <Text style={styles.result} accessibilityLiveRegion="polite" aria-live="polite">
+          {spinning ? t('wheels.spinning') : `${t('wheels.result')}: `}
+          {!spinning ? <Text style={styles.resultValue}>{current_}</Text> : null}
+        </Text>
+      </Animated.View>
     </View>
   );
 }
@@ -274,8 +301,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.surface,
   },
-  stepText: { fontSize: 24, lineHeight: 26, color: colors.primaryDark, fontWeight: '700' },
+  stepBtnHover: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
+  resultBox: { marginTop: 12, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999, backgroundColor: colors.surfaceAlt },
+  resultBoxOn: { backgroundColor: colors.primarySoft },
   spinBtn: {
+    flexDirection: 'row',
+    gap: 8,
+    ...shadow,
     minWidth: 130,
     height: 46,
     borderRadius: 23,
@@ -285,6 +317,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
   },
   spinText: { fontFamily, color: colors.onPrimary, fontWeight: '800', fontSize: 16 },
-  result: { fontFamily, marginTop: 10, fontSize: 15, color: colors.textMuted, textAlign: 'center' },
+  result: { fontFamily, fontSize: 15, color: colors.textMuted, textAlign: 'center' },
   resultValue: { color: colors.text, fontWeight: '800' },
 });

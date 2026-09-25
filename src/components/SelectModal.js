@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useI18n } from '../i18n';
 import { colors, fontFamily, radius, space } from '../theme';
 import { Button, Input, Touchable } from './ui';
+import { Icon } from './Icon';
 
 /**
  * Accessible single-choice picker: a field-like button that opens a searchable
@@ -12,6 +13,8 @@ import { Button, Input, Touchable } from './ui';
 export function SelectModal({ label, value, options, onChange, placeholder, error, searchable, title, disabled, triggerLabel }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
+  const { width } = useWindowDimensions();
+  const dialog = width >= 600; // centred dialog on tablet/desktop, bottom sheet on phones
   const [query, setQuery] = useState('');
   const current = options.find((o) => o.value === value);
 
@@ -34,19 +37,17 @@ export function SelectModal({ label, value, options, onChange, placeholder, erro
         aria-haspopup="dialog"
         disabled={disabled}
         onPress={() => setOpen(true)}
-        style={[styles.trigger, error && styles.triggerError, disabled && { opacity: 0.5 }]}
+        style={({ hovered }) => [styles.trigger, hovered && !disabled && styles.triggerHover, error && styles.triggerError, disabled && { opacity: 0.5 }]}
       >
         <Text style={[styles.triggerText, !current && styles.placeholder]} numberOfLines={1}>
           {triggerLabel || (current ? current.label : placeholder || t('common.select'))}
         </Text>
-        <Text style={styles.chevron} aria-hidden>
-          ▾
-        </Text>
+        <Icon name="chevronDown" size={18} color={colors.textMuted} />
       </Touchable>
-      <Modal visible={open} animationType="slide" transparent onRequestClose={close}>
-        <View style={styles.backdrop}>
+      <Modal visible={open} animationType={dialog ? 'fade' : 'slide'} transparent onRequestClose={close}>
+        <View style={[styles.backdrop, dialog && styles.backdropDialog]}>
           <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityLabel={t('common.close')} />
-          <SafeAreaView style={styles.sheet} edges={['bottom']} accessibilityViewIsModal aria-modal role="dialog" aria-label={title || label}>
+          <SafeAreaView style={[styles.sheet, dialog && styles.sheetDialog]} edges={['bottom']} accessibilityViewIsModal aria-modal role="dialog" aria-label={title || label}>
             <View style={styles.sheetHeader}>
               <Text style={styles.sheetTitle} accessibilityRole="header">
                 {title || label}
@@ -79,11 +80,11 @@ export function SelectModal({ label, value, options, onChange, placeholder, erro
                       onChange(item.value);
                       close();
                     }}
-                    style={({ pressed }) => [styles.option, selected && styles.optionSelected, pressed && styles.optionPressed]}
+                    style={({ pressed, hovered }) => [styles.option, (pressed || hovered) && styles.optionPressed, selected && styles.optionSelected]}
                   >
                     <Text style={[styles.optionText, selected && styles.optionTextSelected]}>{item.label}</Text>
                     {item.detail ? <Text style={styles.optionDetail}>{item.detail}</Text> : null}
-                    {selected ? <Text style={styles.check} aria-hidden>✓</Text> : null}
+                    {selected ? <Icon name="check" size={18} color={colors.primary} strokeWidth={2.6} /> : null}
                   </Touchable>
                 );
               }}
@@ -97,7 +98,7 @@ export function SelectModal({ label, value, options, onChange, placeholder, erro
 
 const styles = StyleSheet.create({
   trigger: {
-    minHeight: 48,
+    minHeight: 50,
     borderWidth: 1.5,
     borderColor: colors.border,
     borderRadius: radius.md,
@@ -106,11 +107,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.surface,
   },
+  triggerHover: { borderColor: colors.primary },
   triggerError: { borderColor: colors.danger },
   triggerText: { flex: 1, fontFamily, fontSize: 16, color: colors.text },
   placeholder: { color: colors.textMuted },
   chevron: { fontSize: 16, color: colors.textMuted, marginLeft: space(2) },
-  backdrop: { flex: 1, backgroundColor: 'rgba(10,20,18,0.45)', justifyContent: 'flex-end', alignItems: 'center' },
+  backdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end', alignItems: 'center' },
   sheet: {
     width: '100%',
     maxWidth: 560,
@@ -120,6 +122,8 @@ const styles = StyleSheet.create({
     borderTopRightRadius: radius.lg,
     padding: space(4),
   },
+  backdropDialog: { justifyContent: 'center', padding: space(6) },
+  sheetDialog: { borderRadius: radius.lg, maxHeight: '80%' },
   sheetHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: space(2) },
   sheetTitle: { fontFamily, fontSize: 18, fontWeight: '800', color: colors.text, flex: 1 },
   option: {

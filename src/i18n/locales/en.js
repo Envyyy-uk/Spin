@@ -1,5 +1,31 @@
 // English — default language and fallback for every missing key.
 export default {
+  hero: {
+    eyebrow: 'Travel planner',
+    title: 'Let the wheel choose your next trip.',
+    lead: 'Set your dates, group and budget, spin for a destination, and get an honest estimate of what it could cost.',
+    cta: 'Start planning',
+    resume: 'Continue my plan',
+    statDestinations: 'destinations',
+    statWheels: 'wheels',
+    statLanguages: 'languages',
+  },
+  how: {
+    eyebrow: 'How it works',
+    title: 'Three calm steps to a real plan',
+    step1: 'Tell us the basics',
+    step1Desc: 'Departure country, dates, travellers and budget currency.',
+    step2: 'Spin the wheels',
+    step2Desc: 'Destination, trip length, budget — and an optional holiday style.',
+    step3: 'Check and explore',
+    step3Desc: 'A budget reality check, saving tips, and ideas for stays and things to do.',
+    honestTitle: 'Honest estimates, no invented prices',
+    honestDesc: 'Costs are approximate and clearly marked. Search links open real booking sites, where you check live prices and availability.',
+  },
+  plan: {
+    title: 'Your trip plan',
+    lead: 'Everything in one place: your spin, a budget check and ideas for the trip. Change anything and the plan updates instantly.',
+  },
   app: {
     name: 'Spin',
     documentTitle: 'Spin — travel planner',
@@ -10,6 +36,7 @@ export default {
     loading: 'Loading…',
   },
   nav: {
+    home: 'Home',
     setup: 'Trip details',
     wheels: 'Spin',
     plan: 'Your plan',
@@ -41,6 +68,8 @@ export default {
     people: { one: '{count} person', other: '{count} people' },
   },
   setup: {
+    groupRoute: 'Route & group',
+    budgetTitle: 'Budget',
     title: 'Where does your trip start?',
     subtitle: 'Tell us the basics. You can change everything later.',
     origin: 'Departure country',
@@ -71,6 +100,7 @@ export default {
     pick: 'Pick date',
   },
   wheels: {
+    trayTitle: 'Your trip so far',
     title: 'Spin the wheels',
     subtitle: 'Adjust each wheel, then spin — or choose values manually.',
     spinAll: 'Spin all wheels',
@@ -153,6 +183,8 @@ export default {
     noStyle: 'Any',
   },
   estimate: {
+    budgetMarker: 'Budget',
+    usedOfBudget: '{pct} of budget',
     title: 'Is the budget realistic?',
     disclaimer: 'Approximate estimate from a demo cost model — not current prices. Real costs depend on dates, availability and how you travel.',
     stayLevel: 'Accommodation',
@@ -214,6 +246,10 @@ export default {
     apply: 'Apply',
   },
   suggest: {
+    eyebrow: 'Ideas',
+    lead: 'Places to stay, things to do and spots worth a detour — matched to your trip.',
+    showAll: 'Show all ({count})',
+    showLess: 'Show less',
     title: 'Stay, do & see',
     disclaimer: 'Examples only. Prices are rough demo ranges, not offers, and availability is not checked. Use the links to search real options for your dates.',
     apiNote: 'Results from your connected provider. Check the final price and availability on the booking site.',
@@ -281,6 +317,7 @@ export default {
     },
   },
   summary: {
+    eyebrow: 'At a glance',
     title: 'Trip summary',
     total: 'Estimated total',
     budget: 'Budget',

@@ -4,6 +4,8 @@ import { addDays, todayISO } from '../lib/dates';
 import { getCurrency } from '../data/currencies';
 import { getCountry } from '../data/countries';
 
+const STEP_ORDER = ['home', 'setup', 'wheels', 'plan'];
+
 export const STYLE_KEYS = ['sea', 'culture', 'nature', 'food', 'adventure', 'relax'];
 const STORAGE_KEY = 'spin.state.v1';
 
@@ -15,7 +17,7 @@ export function roundNice(x) {
 
 export function initialState(today = todayISO(), origin = '') {
   return {
-    step: 'setup',
+    step: 'home',
     setup: {
       origin,
       dateMode: 'exact',
@@ -47,8 +49,11 @@ export function reducer(state, action) {
   switch (action.type) {
     case 'hydrate':
       return { ...state, ...action.state };
-    case 'step':
-      return { ...state, step: action.step };
+    case 'step': {
+      const from = STEP_ORDER.indexOf(state.step);
+      const to = STEP_ORDER.indexOf(action.step);
+      return { ...state, step: action.step, stepDirection: to >= from ? 1 : -1 };
+    }
     case 'setup': {
       const setup = { ...state.setup, ...action.patch };
       const selection = { ...state.selection };
@@ -110,7 +115,7 @@ function sanitize(saved, base) {
   if (out.setup && out.setup.origin && !getCountry(out.setup.origin)) out.setup.origin = '';
   if (out.destSettings && !Array.isArray(out.destSettings.excluded)) out.destSettings.excluded = [];
   if (out.styleSettings && !Array.isArray(out.styleSettings.options)) out.styleSettings.options = [...STYLE_KEYS];
-  if (['setup', 'wheels', 'plan'].includes(saved.step)) out.step = saved.step;
+  // The step is not restored: every launch opens on the home screen, which offers “continue”.
   return out;
 }
 
@@ -138,7 +143,7 @@ export function useTripStore(defaultOrigin) {
     if (!hydrated) return;
     clearTimeout(timer.current);
     timer.current = setTimeout(() => {
-      const { spinCount, ...rest } = state;
+      const { spinCount, step, stepDirection, ...rest } = state;
       AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(rest)).catch(() => {});
     }, 300);
     return () => clearTimeout(timer.current);

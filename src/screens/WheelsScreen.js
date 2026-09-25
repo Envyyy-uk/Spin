@@ -1,31 +1,36 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Animated, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useI18n } from '../i18n';
-import { COUNTRIES, sortedCountries } from '../data/countries';
+import { COUNTRIES, countryName, sortedCountries } from '../data/countries';
 import { formatDate, formatMoney } from '../lib/format';
 import { parsePositiveInt, parsePositiveNumber } from '../lib/validation';
 import { STYLE_KEYS } from '../state/store';
-import { colors, space } from '../theme';
-import { Button, Chip, ErrorText, Field, H1, Input, Notice, P, SwitchRow } from '../components/ui';
+import { colors, fontFamily, maxContentWidth, radius, shadowRaised, space } from '../theme';
+import { Button, Chip, ErrorText, Field, Input, Notice, P, SectionHeader, SwitchRow } from '../components/ui';
+import { Icon } from '../components/Icon';
+import { Reveal, useBreakpoint, usePop } from '../components/motion';
 import { SelectModal } from '../components/SelectModal';
 import { WheelCard } from '../components/WheelCard';
 
+/** Text for a numeric input that follows external changes (e.g. a wheel spin) without clobbering typing. */
 function useSyncedText(value) {
   const [text, setText] = useState(value != null ? String(value) : '');
-  useEffect(() => {
-    setText((prev) => {
-      const parsed = parsePositiveNumber(prev);
-      return parsed === value ? prev : value != null ? String(value) : '';
-    });
-  }, [value]);
+  const [prevValue, setPrevValue] = useState(value);
+  if (value !== prevValue) {
+    setPrevValue(value);
+    if (parsePositiveNumber(text) !== value) setText(value != null ? String(value) : '');
+  }
   return [text, setText];
 }
 
-export function WheelsScreen({ state, dispatch, derived, onShowPlan, onBack }) {
+export function WheelsScreen({ state, dispatch, derived }) {
   const { t, tp, lang } = useI18n();
-  const { width } = useWindowDimensions();
-  const wide = width >= 900;
-  const wheelSize = Math.max(220, Math.min(wide ? 300 : 320, (wide ? width / 2 : width) - 96));
+  const { width, isPhone } = useBreakpoint();
+  const wide = !isPhone;
+  const containerW = Math.min(width - 32, maxContentWidth);
+  const colW = wide ? (containerW - 20) / 2 : containerW;
+  const wheelSize = Math.round(Math.max(210, Math.min(340, colW - 64)));
   const { selection, setup } = state;
   const currency = setup.currency;
   const select = (patch) => dispatch({ type: 'select', patch });
@@ -79,33 +84,21 @@ export function WheelsScreen({ state, dispatch, derived, onShowPlan, onBack }) {
     dispatch({ type: 'styleSettings', patch: { options: opts.includes(k) ? opts.filter((x) => x !== k) : STYLE_KEYS.filter((x) => x === k || opts.includes(x)) } });
   };
 
-  const missingLabels = derived.missing.map((m) =>
-    m === 'destination' ? t('wheel.destination.title') : m === 'duration' ? t('wheel.duration.title') : t('wheel.budget.title'),
-  );
-  const canPlan = derived.trip != null;
-
   const cardStyle = wide ? styles.half : null;
 
   return (
     <View style={styles.wrap}>
-      <View>
-        <H1>{t('wheels.title')}</H1>
-        <P muted style={{ marginTop: space(1) }}>
-          {t('wheels.subtitle')} {t('wheels.tapHint')}
-        </P>
+      <View style={[styles.intro, wide && styles.introWide]}>
+        <SectionHeader level={1} eyebrow={t('nav.stepOf', { n: 2, total: 3 })} title={t('wheels.title')} lead={`${t('wheels.subtitle')} ${t('wheels.tapHint')}`} style={{ flex: 1 }} />
+        <Button large variant="accent" icon="sparkle" label={t('wheels.spinAll')} onPress={() => dispatch({ type: 'spinAll' })} style={!wide ? { alignSelf: 'stretch' } : null} />
       </View>
-      <Button
-        variant="accent"
-        icon="✦"
-        label={t('wheels.spinAll')}
-        onPress={() => dispatch({ type: 'spinAll' })}
-        style={styles.spinAll}
-      />
 
       <View style={[styles.grid, wide && styles.gridWide]}>
         {/* 1. Destination */}
+        <Reveal style={cardStyle}>
         <WheelCard
-          style={cardStyle}
+          style={styles.fill}
+          icon="globe"
           size={wheelSize}
           title={t('wheel.destination.title')}
           options={destOptions}
@@ -154,9 +147,13 @@ export function WheelsScreen({ state, dispatch, derived, onShowPlan, onBack }) {
           }
         />
 
+        </Reveal>
+
         {/* 2. Duration */}
+        <Reveal style={cardStyle} delay={wide ? 100 : 0}>
         <WheelCard
-          style={cardStyle}
+          style={styles.fill}
+          icon="calendar"
           size={wheelSize}
           title={t('wheel.duration.title')}
           options={exact ? [] : durOptions}
@@ -165,7 +162,7 @@ export function WheelsScreen({ state, dispatch, derived, onShowPlan, onBack }) {
             exact ? (
               <>
                 <Text style={styles.lockedValue}>{tp('plural.days', derived.span || 0)}</Text>
-                <Notice tone="info" icon="🔒">{t('wheel.duration.locked', { days: tp('plural.days', derived.span || 0) })}</Notice>
+                <Notice tone="info" icon="lock">{t('wheel.duration.locked', { days: tp('plural.days', derived.span || 0) })}</Notice>
                 <Button small variant="secondary" label={t('setup.flexible')} onPress={() => dispatch({ type: 'setup', patch: { dateMode: 'flexible' } })} style={{ alignSelf: 'flex-start' }} />
               </>
             ) : null
@@ -209,9 +206,13 @@ export function WheelsScreen({ state, dispatch, derived, onShowPlan, onBack }) {
           }
         />
 
+        </Reveal>
+
         {/* 3. Budget */}
+        <Reveal style={cardStyle}>
         <WheelCard
-          style={cardStyle}
+          style={styles.fill}
+          icon="wallet"
           size={wheelSize}
           title={t('wheel.budget.title')}
           badge={currency}
@@ -254,9 +255,13 @@ export function WheelsScreen({ state, dispatch, derived, onShowPlan, onBack }) {
           }
         />
 
+        </Reveal>
+
         {/* 4. Holiday style (optional) */}
+        <Reveal style={cardStyle} delay={wide ? 100 : 0}>
         <WheelCard
-          style={cardStyle}
+          style={styles.fill}
+          icon="sparkle"
           size={wheelSize}
           title={t('wheel.style.title')}
           badge={t('common.optional')}
@@ -287,19 +292,14 @@ export function WheelsScreen({ state, dispatch, derived, onShowPlan, onBack }) {
               <P muted style={{ fontSize: 13 }}>{t('wheel.style.intro')}</P>
               <View style={styles.chips}>
                 {STYLE_KEYS.map((k) => (
-                  <Chip key={k} label={t(`styles.${k}`)} selected={state.styleSettings.options.includes(k)} onPress={() => toggleStyle(k)} />
+                  <Chip key={k} icon={k} label={t(`styles.${k}`)} selected={state.styleSettings.options.includes(k)} onPress={() => toggleStyle(k)} />
                 ))}
               </View>
             </>
           }
         />
+        </Reveal>
       </View>
-
-      {!canPlan && derived.missing.length ? (
-        <P muted style={{ textAlign: 'center' }} accessibilityLiveRegion="polite">
-          {t('wheels.missing', { list: missingLabels.join(', ') })}
-        </P>
-      ) : null}
       {derived.tripErrors.tripStart ? (
         <ErrorText>
           {t(derived.tripErrors.tripStart.key, {
@@ -308,25 +308,98 @@ export function WheelsScreen({ state, dispatch, derived, onShowPlan, onBack }) {
           })}
         </ErrorText>
       ) : null}
-      <View style={[styles.row, styles.navRow]}>
-        <Button variant="secondary" label={`← ${t('nav.back')}`} onPress={onBack} />
-        <Button label={`${t('wheels.toPlan')} →`} onPress={onShowPlan} disabled={!canPlan} style={styles.flex} />
+    </View>
+  );
+}
+
+function TrayPill({ icon, label, value }) {
+  const scale = usePop(value);
+  const empty = value == null;
+  return (
+    <Animated.View style={[styles.pill, empty && styles.pillEmpty, { transform: [{ scale }] }]} accessible accessibilityLabel={`${label}: ${empty ? '—' : value}`}>
+      <Icon name={icon} size={16} color={empty ? colors.textMuted : colors.primary} />
+      <View style={{ flexShrink: 1 }}>
+        <Text style={styles.pillLabel} numberOfLines={1}>{label}</Text>
+        <Text style={[styles.pillValue, empty && { color: colors.textMuted }]} numberOfLines={1}>{empty ? '—' : value}</Text>
       </View>
+    </Animated.View>
+  );
+}
+
+/** Sticky bottom bar on the wheels step: live selection + navigation. */
+export function WheelsFooter({ state, derived, onBack, onShowPlan }) {
+  const { t, tp, lang } = useI18n();
+  const insets = useSafeAreaInsets();
+  const { isPhone } = useBreakpoint();
+  const { selection, setup } = state;
+  const canPlan = derived.trip != null;
+  const missingLabels = derived.missing.map((m) =>
+    m === 'destination' ? t('wheel.destination.title') : m === 'duration' ? t('wheel.duration.title') : t('wheel.budget.title'),
+  );
+  const pills = [
+    { key: 'destination', icon: 'globe', label: t('result.destination'), value: selection.destination ? countryName(selection.destination, lang) : null },
+    { key: 'duration', icon: 'calendar', label: t('result.duration'), value: derived.days ? tp('plural.days', derived.days) : null },
+    { key: 'budget', icon: 'wallet', label: t('result.budget'), value: selection.budget > 0 ? formatMoney(selection.budget, setup.currency, lang) : null },
+  ];
+  if (state.styleSettings.enabled) {
+    pills.push({ key: 'style', icon: selection.style || 'sparkle', label: t('result.style'), value: selection.style ? t(`styles.${selection.style}`) : null });
+  }
+  return (
+    <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, space(3)) }]} accessibilityRole={Platform.OS === 'web' ? 'region' : undefined} aria-label={t('wheels.trayTitle')}>
+      <View style={[styles.footerInner, !isPhone && styles.footerInnerWide]}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tray} style={{ flexGrow: 1, flexShrink: 1 }}>
+          {pills.map((p) => (
+            <TrayPill key={p.key} icon={p.icon} label={p.label} value={p.value} />
+          ))}
+        </ScrollView>
+        <View style={styles.footerActions}>
+          <Button variant="secondary" icon="arrowLeft" label={isPhone ? '' : t('nav.back')} accessibilityLabel={t('nav.back')} onPress={onBack} style={isPhone ? styles.iconOnly : null} />
+          <Button label={t('wheels.toPlan')} iconRight="arrowRight" onPress={onShowPlan} disabled={!canPlan} style={isPhone ? { flex: 1 } : null} />
+        </View>
+      </View>
+      {!canPlan && missingLabels.length ? (
+        <Text style={styles.missing} accessibilityLiveRegion="polite" aria-live="polite">
+          {t('wheels.missing', { list: missingLabels.join(', ') })}
+        </Text>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: space(4) },
-  spinAll: { alignSelf: 'stretch' },
-  grid: { gap: space(4) },
+  wrap: { gap: space(6) },
+  intro: { gap: space(4) },
+  introWide: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
+  grid: { gap: space(5) },
   gridWide: { flexDirection: 'row', flexWrap: 'wrap' },
-  half: { flexBasis: '48%', flexGrow: 1 },
+  half: { flexBasis: '47%', flexGrow: 1 },
+  fill: { flex: 1 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: space(2) },
   row3: { flexDirection: 'row', gap: space(2) },
   flex: { flex: 1 },
   chipBox: { maxHeight: 240, borderRadius: 12, backgroundColor: colors.surface, padding: space(2) },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space(2) },
-  navRow: { flexWrap: 'nowrap' },
-  lockedValue: { fontSize: 34, fontWeight: '800', color: colors.primaryDark, textAlign: 'center', marginVertical: space(4) },
+  footer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: space(3),
+    paddingHorizontal: space(4),
+    ...shadowRaised,
+  },
+  footerInner: { width: '100%', maxWidth: maxContentWidth, alignSelf: 'center', gap: space(3) },
+  footerInnerWide: { flexDirection: 'row', alignItems: 'center' },
+  footerActions: { flexDirection: 'row', gap: space(2), alignItems: 'center' },
+  iconOnly: { paddingHorizontal: space(3.5), minWidth: 48 },
+  tray: { gap: space(2), paddingRight: space(2) },
+  pill: { flexDirection: 'row', alignItems: 'center', gap: space(2), paddingHorizontal: space(3), paddingVertical: space(1.5), borderRadius: radius.md, backgroundColor: colors.primarySoft, maxWidth: 220 },
+  pillEmpty: { backgroundColor: colors.surfaceAlt },
+  pillLabel: { fontFamily, fontSize: 11, fontWeight: '700', color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.4 },
+  pillValue: { fontFamily, fontSize: 14, fontWeight: '800', color: colors.text },
+  missing: { fontFamily, fontSize: 12.5, color: colors.textMuted, textAlign: 'center', marginTop: space(2), width: '100%', maxWidth: maxContentWidth, alignSelf: 'center' },
+  lockedValue: { fontFamily, fontSize: 44, fontWeight: '800', letterSpacing: -1, color: colors.primaryDark, textAlign: 'center', marginVertical: space(6) },
 });

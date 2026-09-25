@@ -4,6 +4,9 @@
 - UI strings live in `src/i18n/locales/*.js`; English is the default and fallback. Run `npm test` after editing strings — it checks every locale for missing keys and placeholder mismatches.
 - Pure logic lives in `src/lib`, `src/services`, `src/state/derived.js` and is tested with `node --test` (use explicit `.js` extensions in imports there).
 - All prices come from the demo model in `src/services/pricingService.js`; never present them as live prices.
+- Animations use React Native `Animated` via helpers in `src/components/motion.js` (`Reveal`, `StepTransition`, `useAnimatedValue`, `useReducedMotion`, …). Use that file's `useAnimatedValue` — react-native-web has no built-in one — and respect `useReducedMotion()` in any new animation.
+- Design tokens (colours, type, radii, shadows, motion durations, breakpoints) live in `src/theme.js`; icons in `src/components/Icon.js`.
+- Lint with `npm run lint` (flat config in `eslint.config.js`; `npx expo lint`'s auto-setup needs network access to Expo's API). There is no TypeScript in this project, so `tsc` does not apply.
 
 This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
 

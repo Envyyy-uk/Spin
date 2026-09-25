@@ -6,6 +6,7 @@ import { parseISO, toISO } from '../lib/dates';
 import { formatDate, LOCALE_TAGS } from '../lib/format';
 import { colors, fontFamily, radius, space } from '../theme';
 import { Button, Touchable } from './ui';
+import { Icon } from './Icon';
 
 /**
  * Date input:
@@ -33,12 +34,13 @@ export function DateField({ value, onChange, label, error, min, max, nativeID })
       style: {
         fontFamily: 'inherit',
         fontSize: 16,
-        minHeight: 48,
+        minHeight: 50,
         boxSizing: 'border-box',
         width: '100%',
         padding: '0 14px',
         borderRadius: radius.md,
         border: `1.5px solid ${error ? colors.danger : colors.border}`,
+        accentColor: colors.primary,
         color: colors.text,
         background: colors.surface,
       },
@@ -77,7 +79,7 @@ export function DateField({ value, onChange, label, error, min, max, nativeID })
         <Text style={[styles.text, !value && { color: colors.textMuted }]}>
           {value ? formatDate(value, lang, 'long') : t('date.pick')}
         </Text>
-        <Text aria-hidden style={styles.icon}>📅</Text>
+        <Icon name="calendar" size={18} color={colors.primary} />
       </Touchable>
       {Platform.OS === 'ios' ? (
         <Modal visible={iosOpen} transparent animationType="slide" onRequestClose={() => setIosOpen(false)}>
@@ -121,7 +123,7 @@ const styles = StyleSheet.create({
   },
   text: { flex: 1, fontFamily, fontSize: 16, color: colors.text },
   icon: { fontSize: 16 },
-  backdrop: { flex: 1, backgroundColor: 'rgba(10,20,18,0.45)', justifyContent: 'flex-end' },
+  backdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
   sheet: { backgroundColor: colors.surface, padding: space(4), paddingBottom: space(8), borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg },
   title: { fontFamily, fontSize: 17, fontWeight: '800', color: colors.text, marginBottom: space(2) },
 });

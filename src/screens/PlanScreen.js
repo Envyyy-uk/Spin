@@ -1,17 +1,20 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Linking, Platform, Share, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Animated, Easing, Linking, Platform, Share, StyleSheet, Text, View } from 'react-native';
 import { useI18n } from '../i18n';
-import { COUNTRIES, countryName, sortedCountries } from '../data/countries';
+import { COUNTRIES, countryName, getCountry, sortedCountries } from '../data/countries';
 import { formatDate, formatMoney, formatMoneyRange, formatNumber, formatPercent } from '../lib/format';
 import { todayISO, tripEnd } from '../lib/dates';
 import { budgetStatus, costDrivers, savingTips } from '../lib/budget';
 import { parsePositiveInt, parsePositiveNumber } from '../lib/validation';
-import { COST_CATEGORIES, estimateTripCosts, STAY_LEVELS, TRANSPORT_LEVELS } from '../services/pricingService';
+import { COST_CATEGORIES, distanceKm, estimateTripCosts, STAY_LEVELS, TRANSPORT_LEVELS } from '../services/pricingService';
 import { getSuggestions } from '../services/suggestionsService';
 import { isDemoMode } from '../services/config';
 import { STYLE_KEYS } from '../state/store';
-import { categoryColors, colors, fontFamily, radius, space } from '../theme';
-import { Badge, Button, Card, ErrorText, Field, H1, H2, H3, Input, Notice, P, Segmented, Touchable } from '../components/ui';
+import { categoryColors, colors, fontFamily, radius, shadowRaised, space, type } from '../theme';
+import { Badge, Button, Card, ErrorText, Eyebrow, Field, H2, H3, Input, Notice, P, SectionHeader, Segmented, Touchable } from '../components/ui';
+import { Icon } from '../components/Icon';
+import { RouteHeader } from '../components/RouteHeader';
+import { AnimatedNumber, Reveal, USE_NATIVE_DRIVER, animateNextLayout, useAnimatedFraction, useBreakpoint, useReducedMotion, useAnimatedValue } from '../components/motion';
 import { SelectModal } from '../components/SelectModal';
 import { DateField } from '../components/DateField';
 import { BudgetBar, STATUS_TONE } from '../components/BudgetBar';
@@ -25,8 +28,8 @@ function roundUpNice(x) {
 // ------------------------------------------------------------------------------
 export function PlanScreen({ state, dispatch, derived, onRespin }) {
   const { t, lang } = useI18n();
-  const { width } = useWindowDimensions();
-  const wide = width >= 900;
+  const { isDesktop } = useBreakpoint();
+  const wide = isDesktop;
   const trip = derived.trip;
   const today = todayISO();
 
@@ -35,8 +38,8 @@ export function PlanScreen({ state, dispatch, derived, onRespin }) {
   if (!trip || !estimate) {
     return (
       <View style={styles.wrap}>
-        <H1>{t('nav.plan')}</H1>
-        <Notice tone="warning" icon="!">{t('nav.locked')}</Notice>
+        <SectionHeader level={1} title={t('nav.plan')} />
+        <Notice tone="warning" icon="alert">{t('nav.locked')}</Notice>
         <Button label={t('result.respin')} onPress={onRespin} />
       </View>
     );
@@ -47,15 +50,19 @@ export function PlanScreen({ state, dispatch, derived, onRespin }) {
 
   return (
     <View style={styles.wrap}>
-      <H1>{t('nav.plan')}</H1>
-      <ResultCard state={state} dispatch={dispatch} derived={derived} onRespin={onRespin} />
+      <Reveal>
+        <SectionHeader level={1} eyebrow={t('nav.stepOf', { n: 3, total: 3 })} title={t('plan.title')} lead={t('plan.lead')} />
+      </Reveal>
+      <Reveal delay={80}>
+        <ResultCard state={state} dispatch={dispatch} derived={derived} onRespin={onRespin} />
+      </Reveal>
       <View style={[styles.cols, wide && styles.colsWide]}>
-        <View style={wide ? styles.colMain : null}>
+        <Reveal style={wide ? styles.colMain : null}>
           <EstimateCard trip={trip} estimate={estimate} status={status} fx={fx} dispatch={dispatch} state={state} derived={derived} today={today} />
-        </View>
-        <View style={wide ? styles.colSide : null}>
+        </Reveal>
+        <Reveal delay={wide ? 120 : 0} style={wide ? styles.colSide : null}>
           <SummaryCard trip={trip} estimate={estimate} status={status} fx={fx} />
-        </View>
+        </Reveal>
       </View>
       <SuggestionsSection trip={trip} fx={fx} lang={lang} />
     </View>
@@ -75,6 +82,7 @@ function Fact({ label, value, sub }) {
 
 function ResultCard({ state, dispatch, derived, onRespin }) {
   const { t, tp, lang } = useI18n();
+  const { isPhone } = useBreakpoint();
   const [editing, setEditing] = useState(false);
   const trip = derived.trip;
   const { setup } = state;
@@ -83,13 +91,15 @@ function ResultCard({ state, dispatch, derived, onRespin }) {
   const [peopleText, setPeopleText] = useState(String(trip.travellers));
   const [budgetText, setBudgetText] = useState(String(trip.budget));
 
-  useEffect(() => {
+  const toggleEditing = () => {
     if (!editing) {
+      // Start editing from the current values.
       setDurText(String(trip.days));
       setPeopleText(String(trip.travellers));
       setBudgetText(String(trip.budget));
     }
-  }, [editing, trip.days, trip.travellers, trip.budget]);
+    setEditing((v) => !v);
+  };
 
   const countryOptions = useMemo(
     () =>
@@ -133,13 +143,12 @@ function ResultCard({ state, dispatch, derived, onRespin }) {
   return (
     <Card style={styles.resultCard}>
       <View style={styles.resultHead}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.eyebrow}>{t('result.title')}</Text>
-          <Text style={styles.bigCountry} accessibilityRole="header" aria-level={2}>
-            {countryName(setup.origin, lang)} → {countryName(trip.destination, lang)}
-          </Text>
-        </View>
+        <Eyebrow color={colors.sun}>{t('result.title')}</Eyebrow>
+        <Text style={styles.srOnly} accessibilityRole="header" aria-level={2}>
+          {countryName(setup.origin, lang)} → {countryName(trip.destination, lang)}
+        </Text>
       </View>
+      <RouteHeader origin={setup.origin} destination={trip.destination} km={distanceKm(getCountry(setup.origin), getCountry(trip.destination))} compact={isPhone} />
       {!editing ? (
         <View style={styles.facts}>
           <Fact label={t('result.dates')} value={`${formatDate(trip.startDate, lang, 'short')} – ${formatDate(trip.endDate, lang)}`} />
@@ -208,14 +217,14 @@ function ResultCard({ state, dispatch, derived, onRespin }) {
       )}
       <View style={styles.row}>
         <Button
-          variant={editing ? 'primary' : 'secondary'}
-          icon={editing ? '✓' : '✎'}
+          variant={editing ? 'accent' : 'light'}
+          icon={editing ? 'check' : 'edit'}
           label={editing ? t('result.doneEditing') : t('result.edit')}
           disabled={editing && hasErrors}
-          onPress={() => setEditing((v) => !v)}
+          onPress={toggleEditing}
           small
         />
-        <Button variant="secondary" icon="⟳" label={t('result.respin')} onPress={onRespin} small />
+        <Button variant="light" icon="spin" label={t('result.respin')} onPress={onRespin} small />
       </View>
     </Card>
   );
@@ -270,11 +279,18 @@ function EstimateCard({ trip, estimate, status, fx, dispatch, state, derived, to
 
   return (
     <Card style={styles.sectionCard}>
-      <H2>{t('estimate.title')}</H2>
-      <Notice tone="info" icon="≈">{t('estimate.disclaimer')}</Notice>
+      <View style={styles.cardHead}>
+        <View style={styles.cardHeadIcon}>
+          <Icon name="wallet" size={22} color={colors.primary} />
+        </View>
+        <H2 style={{ flex: 1 }}>{t('estimate.title')}</H2>
+      </View>
+      <Notice tone="info" icon="info">{t('estimate.disclaimer')}</Notice>
 
       <View style={[styles.status, { backgroundColor: tone.bg, borderColor: tone.fg }]} accessibilityLiveRegion="polite" aria-live="polite">
-        <Text style={[styles.statusIcon, { color: tone.fg }]} aria-hidden>{tone.icon}</Text>
+        <View style={[styles.statusIconWrap, { borderColor: tone.fg }]}>
+          <Icon name={tone.icon} size={20} color={tone.fg} strokeWidth={2.8} />
+        </View>
         <View style={{ flex: 1 }}>
           <Text style={[styles.statusTitle, { color: tone.fg }]}>{t(`estimate.status.${status}`)}</Text>
           <Text style={styles.statusDesc}>{t(`estimate.statusDesc.${status}`)}</Text>
@@ -294,7 +310,7 @@ function EstimateCard({ trip, estimate, status, fx, dispatch, state, derived, to
             label={t('estimate.stayLevel')}
             value={trip.stay}
             onChange={(v) => dispatch({ type: 'plan', patch: { stay: v } })}
-            options={STAY_LEVELS.map((k) => ({ value: k, label: t(`estimate.stay.${k}`) }))}
+            options={STAY_LEVELS.map((k) => ({ value: k, label: t(`estimate.stay.${k}`), icon: k === 'budget' ? 'bed' : undefined }))}
           />
         </Field>
         <Field label={t('estimate.transportLevel')} style={styles.flex}>
@@ -302,7 +318,7 @@ function EstimateCard({ trip, estimate, status, fx, dispatch, state, derived, to
             label={t('estimate.transportLevel')}
             value={trip.transport}
             onChange={(v) => dispatch({ type: 'plan', patch: { transport: v } })}
-            options={TRANSPORT_LEVELS.map((k) => ({ value: k, label: t(`estimate.transport.${k}`) }))}
+            options={TRANSPORT_LEVELS.map((k) => ({ value: k, label: t(`estimate.transport.${k}`), icon: k === 'economy' ? 'plane' : undefined }))}
           />
         </Field>
       </View>
@@ -312,19 +328,15 @@ function EstimateCard({ trip, estimate, status, fx, dispatch, state, derived, to
           const c = estimate.categories[key];
           const share = trip.budgetEur > 0 ? c.mid / trip.budgetEur : 0;
           return (
-            <View key={key} style={styles.catRow}>
-              <View style={styles.catHead}>
-                <View style={[styles.swatch, { backgroundColor: categoryColors[key] }]} />
-                <Text style={styles.catName}>{t(`estimate.categories.${key}`)}</Text>
-                <Text style={styles.catAmount}>{money(c.mid)}</Text>
-              </View>
-              <View style={styles.catTrack} aria-hidden>
-                <View style={[styles.catFill, { width: `${Math.min(100, share * 100)}%`, backgroundColor: categoryColors[key] }]} />
-              </View>
-              <Text style={styles.catMeta}>
-                {t('estimate.shareOfBudget', { share: formatPercent(share, lang) })} · {t('estimate.range', { min: money(c.min), max: money(c.max) })}
-              </Text>
-            </View>
+            <CategoryRow
+              key={key}
+              catKey={key}
+              name={t(`estimate.categories.${key}`)}
+              amount={fx(c.mid)}
+              currency={cur}
+              share={share}
+              meta={`${t('estimate.shareOfBudget', { share: formatPercent(share, lang) })} · ${t('estimate.range', { min: money(c.min), max: money(c.max) })}`}
+            />
           );
         })}
         <View style={[styles.catHead, styles.totalRow]}>
@@ -386,7 +398,10 @@ function TipRow({ tip, money, apply }) {
     case 'destination':
       return (
         <View style={styles.tip}>
-          <Text style={styles.tipText}>💡 {t('tips.destination')}</Text>
+          <View style={styles.tipRow}>
+            <Icon name="globe" size={18} color={colors.accentDark} />
+            <Text style={styles.tipText}>{t('tips.destination')}</Text>
+          </View>
           <View style={styles.row}>
             {tip.options.map((o) => (
               <Button
@@ -405,10 +420,13 @@ function TipRow({ tip, money, apply }) {
   }
   return (
     <View style={styles.tip}>
-      <Text style={styles.tipText}>
-        💡 {text}
-        {tip.fits ? <Text style={styles.fits}> ({t('tips.fits')})</Text> : null}
-      </Text>
+      <View style={styles.tipRow}>
+        <Icon name="bulb" size={18} color={colors.accentDark} />
+        <Text style={styles.tipText}>
+          {text}
+          {tip.fits ? <Text style={styles.fits}> ({t('tips.fits')})</Text> : null}
+        </Text>
+      </View>
       <Button small variant="secondary" label={t('tips.apply')} accessibilityLabel={`${t('tips.apply')}: ${text}`} onPress={() => apply(tip.apply)} style={{ alignSelf: 'flex-start' }} />
     </View>
   );
@@ -461,7 +479,8 @@ function SummaryCard({ trip, estimate, status, fx }) {
 
   return (
     <Card style={[styles.sectionCard, styles.summary]}>
-      <H2>{t('summary.title')}</H2>
+      <Eyebrow>{t('summary.eyebrow')}</Eyebrow>
+      <H2 style={{ marginTop: -space(2) }}>{t('summary.title')}</H2>
       <Text style={styles.summaryRoute}>
         {countryName(trip.origin, lang)} → {countryName(trip.destination, lang)}
       </Text>
@@ -487,7 +506,10 @@ function SummaryCard({ trip, estimate, status, fx }) {
       </View>
 
       <View style={styles.sumRows}>
-        <SumRow label={t('summary.total')} value={`≈ ${money(total)}`} strong />
+        <View style={styles.bigTotal}>
+          <Text style={styles.bigTotalLabel}>{t('summary.total')}</Text>
+          <AnimatedNumber value={total} format={(v) => `≈ ${money(v)}`} style={styles.bigTotalValue} />
+        </View>
         <SumRow label={t('summary.budget')} value={money(trip.budget)} />
         <SumRow
           label={diff >= 0 ? t('summary.remaining') : t('summary.over')}
@@ -498,12 +520,11 @@ function SummaryCard({ trip, estimate, status, fx }) {
         <SumRow label={t('summary.perPerson')} value={`≈ ${money(total / trip.travellers)}`} />
       </View>
       <View style={[styles.statusPill, { backgroundColor: tone.bg }]}>
-        <Text style={[styles.statusPillText, { color: tone.fg }]}>
-          {tone.icon} {t(`estimate.status.${status}`)}
-        </Text>
+        <Icon name={tone.icon} size={15} color={tone.fg} strokeWidth={2.8} />
+        <Text style={[styles.statusPillText, { color: tone.fg }]}>{t(`estimate.status.${status}`)}</Text>
       </View>
       <P muted style={{ fontSize: 13 }}>{t('summary.approx')}</P>
-      <Button variant="secondary" icon="⇪" label={t('summary.share')} onPress={share} />
+      <Button variant="secondary" icon="share" label={t('summary.share')} onPress={share} />
       {msg ? (
         <Text style={[styles.shareMsg, { color: msg.ok ? colors.success : colors.danger }]} accessibilityLiveRegion="polite" aria-live="polite">
           {msg.text}
@@ -525,16 +546,17 @@ function SumRow({ label, value, strong, color }) {
 // ------------------------------------------------------------------------------
 function SuggestionsSection({ trip, fx }) {
   const { t, lang } = useI18n();
-  const [state, setState] = useState({ status: 'loading', data: null, source: null });
   const [attempt, setAttempt] = useState(0);
   const key = `${trip.destination}|${trip.startDate}|${trip.days}|${trip.travellers}|${trip.style}|${trip.stay}|${lang}|${attempt}`;
+  // Result of the latest request, tagged with the request key; a mismatch means "loading".
+  const [result, setResult] = useState({ key: null, status: 'loading', data: null });
+  const state = result.key === key ? result : { status: 'loading', data: null };
 
   useEffect(() => {
     let alive = true;
-    setState((s) => ({ ...s, status: 'loading' }));
     getSuggestions({ ...trip, lang })
-      .then((res) => alive && setState({ status: 'ready', data: res.groups, source: res.source }))
-      .catch(() => alive && setState({ status: 'error', data: null, source: null }));
+      .then((res) => alive && setResult({ key, status: 'ready', data: res.groups }))
+      .catch(() => alive && setResult({ key, status: 'error', data: null }));
     return () => {
       alive = false;
     };
@@ -546,20 +568,26 @@ function SuggestionsSection({ trip, fx }) {
 
   return (
     <View style={styles.suggestWrap}>
-      <H2>{t('suggest.title')}</H2>
-      <Notice tone={isDemoMode ? 'warning' : 'info'} icon={isDemoMode ? '✱' : 'ℹ'}>
+      <Reveal>
+        <SectionHeader eyebrow={t('suggest.eyebrow')} title={t('suggest.title')} lead={t('suggest.lead')} />
+      </Reveal>
+      <Notice tone={isDemoMode ? 'warning' : 'info'} icon="info">
         {isDemoMode ? t('suggest.disclaimer') : t('suggest.apiNote')}
       </Notice>
       {state.status === 'loading' ? (
-        <View style={styles.center} accessibilityLiveRegion="polite" aria-live="polite" aria-busy>
-          <ActivityIndicator color={colors.primary} />
+        <View accessibilityLiveRegion="polite" aria-live="polite" aria-busy style={{ gap: space(3) }}>
           <P muted>{t('suggest.loading')}</P>
+          <View style={styles.cardGrid}>
+            {[0, 1, 2].map((i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </View>
         </View>
       ) : null}
       {state.status === 'error' ? (
         <Card style={styles.center}>
           <ErrorText>{t('suggest.error')}</ErrorText>
-          <Button small label={t('common.retry')} onPress={() => setAttempt((a) => a + 1)} />
+          <Button small icon="spin" label={t('common.retry')} onPress={() => setAttempt((a) => a + 1)} />
         </Card>
       ) : null}
       {empty ? (
@@ -570,16 +598,7 @@ function SuggestionsSection({ trip, fx }) {
       ) : null}
       {state.status === 'ready' && !empty
         ? groups.map((g) =>
-            (state.data[g] || []).length ? (
-              <View key={g} style={styles.group}>
-                <H3>{t(`suggest.groups.${g}`)}</H3>
-                <View style={styles.cardGrid}>
-                  {state.data[g].map((item) => (
-                    <SuggestionCard key={item.id} item={item} trip={trip} fx={fx} />
-                  ))}
-                </View>
-              </View>
-            ) : null,
+            (state.data[g] || []).length ? <SuggestionGroup key={g} group={g} items={state.data[g]} trip={trip} fx={fx} /> : null,
           )
         : null}
     </View>
@@ -642,8 +661,11 @@ function SuggestionCard({ item, trip, fx }) {
   }
 
   return (
-    <Card style={styles.sCard}>
+    <HoverCard style={styles.sCard}>
       <View style={styles.sCardHead}>
+        <View style={styles.sCardIcon}>
+          <Icon name={CARD_ICONS[item.group]} size={18} color={colors.primary} />
+        </View>
         {item.isExample ? <Badge label={t('common.example')} tone="example" /> : null}
         {item.tags?.includes('match') ? <Badge label={t('suggest.match')} tone="success" /> : null}
         {item.group === 'stay' && item.tags?.includes(trip.stay) ? <Badge label={t('suggest.fitsStay')} tone="info" /> : null}
@@ -661,77 +683,182 @@ function SuggestionCard({ item, trip, fx }) {
           <ExternalLink key={l.url} url={l.url} label={t('suggest.searchOn', { provider: l.provider })} />
         ))}
       </View>
-    </Card>
+    </HoverCard>
+  );
+}
+
+// ------------------------------------------------------------------------------
+const CARD_ICONS = { stay: 'bed', activities: 'ticket', places: 'pin' };
+
+function CategoryRow({ catKey, name, amount, currency, share, meta }) {
+  const { lang } = useI18n();
+  const width = useAnimatedFraction(Math.min(1, share));
+  return (
+    <View style={styles.catRow}>
+      <View style={styles.catHead}>
+        <View style={[styles.swatch, { backgroundColor: categoryColors[catKey] }]} />
+        <Text style={styles.catName}>{name}</Text>
+        <AnimatedNumber value={amount} format={(v) => formatMoney(v, currency, lang)} style={styles.catAmount} />
+      </View>
+      <View style={styles.catTrack} aria-hidden>
+        <Animated.View style={[styles.catFill, { width, backgroundColor: categoryColors[catKey] }]} />
+      </View>
+      <Text style={styles.catMeta}>{meta}</Text>
+    </View>
+  );
+}
+
+/** Card that lifts slightly on hover (web). */
+function HoverCard({ style, children }) {
+  return (
+    <Touchable accessible={false} focusable={false} style={({ hovered }) => [styles.hoverBase, style, hovered && styles.hoverOn]}>
+      {children}
+    </Touchable>
+  );
+}
+
+function SkeletonCard() {
+  const reduced = useReducedMotion();
+  const pulse = useAnimatedValue(0.55);
+  useEffect(() => {
+    if (reduced) return undefined;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 700, easing: Easing.inOut(Easing.quad), useNativeDriver: USE_NATIVE_DRIVER }),
+        Animated.timing(pulse, { toValue: 0.55, duration: 700, easing: Easing.inOut(Easing.quad), useNativeDriver: USE_NATIVE_DRIVER }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [reduced, pulse]);
+  return (
+    <Animated.View style={[styles.sCard, styles.skeleton, { opacity: pulse }]} aria-hidden>
+      <View style={[styles.skelLine, { width: '30%' }]} />
+      <View style={[styles.skelLine, { width: '75%', height: 18 }]} />
+      <View style={[styles.skelLine, { width: '90%' }]} />
+      <View style={[styles.skelLine, { width: '55%' }]} />
+    </Animated.View>
+  );
+}
+
+const GROUP_PREVIEW = 3;
+
+function SuggestionGroup({ group, items, trip, fx }) {
+  const { t } = useI18n();
+  const reduced = useReducedMotion();
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? items : items.slice(0, GROUP_PREVIEW);
+  const hidden = items.length - GROUP_PREVIEW;
+  return (
+    <View style={styles.group}>
+      <View style={styles.groupHead}>
+        <Icon name={CARD_ICONS[group]} size={20} color={colors.primary} />
+        <H3 style={{ flex: 1 }}>{t(`suggest.groups.${group}`)}</H3>
+      </View>
+      <View style={styles.cardGrid}>
+        {visible.map((item, i) => (
+          <Reveal key={item.id} delay={i >= GROUP_PREVIEW ? (i - GROUP_PREVIEW) * 60 : i * 70} style={styles.sCardWrap}>
+            <SuggestionCard item={item} trip={trip} fx={fx} />
+          </Reveal>
+        ))}
+      </View>
+      {hidden > 0 ? (
+        <Button
+          small
+          variant="secondary"
+          icon={expanded ? 'chevronUp' : 'chevronDown'}
+          label={expanded ? t('suggest.showLess') : t('suggest.showAll', { count: items.length })}
+          accessibilityState={{ expanded }}
+          onPress={() => {
+            animateNextLayout(reduced);
+            setExpanded((v) => !v);
+          }}
+          style={{ alignSelf: 'flex-start' }}
+        />
+      ) : null}
+    </View>
   );
 }
 
 // ------------------------------------------------------------------------------
 const styles = StyleSheet.create({
-  wrap: { gap: space(4) },
-  cols: { gap: space(4) },
+  wrap: { gap: space(7) },
+  cols: { gap: space(5) },
   colsWide: { flexDirection: 'row', alignItems: 'flex-start' },
   colMain: { flex: 3 },
-  colSide: { flex: 2 },
+  colSide: { flex: 2, ...(Platform.OS === 'web' ? { position: 'sticky', top: space(4) } : null) },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: space(2) },
   flex: { flex: 1, minWidth: 220 },
-  resultCard: { gap: space(4), backgroundColor: colors.primaryDark, borderColor: colors.primaryDark },
+  srOnly: { position: 'absolute', width: 1, height: 1, overflow: 'hidden', opacity: 0 },
+  resultCard: { gap: space(5), backgroundColor: colors.night, borderColor: colors.night, padding: space(6), borderRadius: radius.xl, ...shadowRaised },
   resultHead: { flexDirection: 'row' },
-  eyebrow: { fontFamily, color: colors.primarySoft, fontSize: 13, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 },
-  bigCountry: { fontFamily, color: colors.onPrimary, fontSize: 26, fontWeight: '800', marginTop: 4 },
   facts: { flexDirection: 'row', flexWrap: 'wrap', gap: space(3) },
-  fact: { backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: radius.md, padding: space(3), minWidth: 140, flexGrow: 1 },
-  factLabel: { fontFamily, color: colors.primarySoft, fontSize: 12, fontWeight: '700' },
-  factValue: { fontFamily, color: colors.onPrimary, fontSize: 17, fontWeight: '800', marginTop: 2 },
-  factSub: { fontFamily, color: colors.primarySoft, fontSize: 12, marginTop: 2 },
-  editGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: space(3), backgroundColor: colors.surface, padding: space(3), borderRadius: radius.md },
+  fact: { backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: radius.md, padding: space(3.5), minWidth: 140, flexGrow: 1 },
+  factLabel: { fontFamily, color: colors.onNightMuted, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 },
+  factValue: { fontFamily, color: colors.onNight, fontSize: 18, fontWeight: '800', marginTop: 4, letterSpacing: -0.2 },
+  factSub: { fontFamily, color: colors.onNightMuted, fontSize: 12.5, marginTop: 2 },
+  editGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: space(3), backgroundColor: colors.surface, padding: space(4), borderRadius: radius.lg },
   editField: { flexGrow: 1, flexBasis: 220, marginBottom: 0 },
-  sectionCard: { gap: space(4) },
-  status: { flexDirection: 'row', gap: space(3), padding: space(3), borderRadius: radius.md, borderWidth: 1.5, alignItems: 'center' },
-  statusIcon: { fontSize: 22, fontWeight: '900', width: 28, textAlign: 'center' },
+  sectionCard: { gap: space(5) },
+  cardHead: { flexDirection: 'row', alignItems: 'center', gap: space(3) },
+  cardHeadIcon: { width: 44, height: 44, borderRadius: 14, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  status: { flexDirection: 'row', gap: space(3), padding: space(4), borderRadius: radius.md, borderWidth: 1.5, alignItems: 'center' },
+  statusIconWrap: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface },
   statusTitle: { fontFamily, fontSize: 17, fontWeight: '800' },
   statusDesc: { fontFamily, fontSize: 14, color: colors.text, marginTop: 2 },
   levelRow: { flexDirection: 'row', flexWrap: 'wrap', gap: space(3) },
-  catList: { gap: space(3) },
-  catRow: { gap: space(1) },
+  catList: { gap: space(3.5) },
+  catRow: { gap: space(1.5) },
   catHead: { flexDirection: 'row', alignItems: 'center', gap: space(2) },
-  swatch: { width: 12, height: 12, borderRadius: 3 },
+  swatch: { width: 12, height: 12, borderRadius: 4 },
   catName: { flex: 1, fontFamily, fontSize: 15, fontWeight: '700', color: colors.text },
   catAmount: { fontFamily, fontSize: 15, fontWeight: '800', color: colors.text },
   catTrack: { height: 8, borderRadius: 4, backgroundColor: colors.surfaceAlt, overflow: 'hidden' },
   catFill: { height: 8, borderRadius: 4 },
   catMeta: { fontFamily, fontSize: 12.5, color: colors.textMuted },
-  totalRow: { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: space(3) },
-  totalText: { fontSize: 17, fontWeight: '800' },
-  metaBox: { backgroundColor: colors.surfaceAlt, borderRadius: radius.md, padding: space(3), gap: 4 },
-  metaLine: { fontFamily, fontSize: 13, color: colors.textMuted },
-  problemBox: { gap: space(1.5), borderLeftWidth: 4, borderLeftColor: colors.coral, paddingLeft: space(3) },
-  tips: { gap: space(2) },
-  tip: { gap: space(2), padding: space(3), borderRadius: radius.md, backgroundColor: colors.accentSoft },
-  tipText: { fontFamily, fontSize: 14.5, lineHeight: 21, color: colors.text },
+  totalRow: { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: space(3.5) },
+  totalText: { fontSize: 18, fontWeight: '800' },
+  metaBox: { backgroundColor: colors.surfaceAlt, borderRadius: radius.md, padding: space(3.5), gap: 4 },
+  metaLine: { fontFamily, fontSize: 13, color: colors.textMuted, lineHeight: 19 },
+  problemBox: { gap: space(1.5), borderLeftWidth: 4, borderLeftColor: colors.coral, paddingLeft: space(4) },
+  tips: { gap: space(2.5) },
+  tip: { gap: space(2.5), padding: space(4), borderRadius: radius.md, backgroundColor: colors.accentSoft },
+  tipRow: { flexDirection: 'row', gap: space(2.5), alignItems: 'flex-start' },
+  tipText: { flex: 1, fontFamily, fontSize: 14.5, lineHeight: 21, color: colors.text },
   fits: { color: colors.success, fontWeight: '700' },
-  summary: { borderWidth: 2, borderColor: colors.primary },
+  summary: { gap: space(4), borderWidth: 1.5, borderColor: colors.primary },
   summaryRoute: { fontFamily, fontSize: 20, fontWeight: '800', color: colors.text },
-  summaryMeta: { fontFamily, fontSize: 14, color: colors.textMuted, marginTop: -space(2) },
-  stack: { flexDirection: 'row', height: 18, borderRadius: radius.pill, overflow: 'hidden' },
-  legendWrap: { gap: 4 },
+  summaryMeta: { fontFamily, fontSize: 14, color: colors.textMuted, marginTop: -space(2), lineHeight: 20 },
+  stack: { flexDirection: 'row', height: 16, borderRadius: radius.pill, overflow: 'hidden', gap: 2 },
+  legendWrap: { gap: 5 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: space(2) },
   legendText: { fontFamily, fontSize: 13, color: colors.textMuted },
-  sumRows: { gap: space(2), borderTopWidth: 1, borderTopColor: colors.border, paddingTop: space(3) },
+  sumRows: { gap: space(2.5), borderTopWidth: 1, borderTopColor: colors.border, paddingTop: space(4) },
+  bigTotal: { gap: 2, marginBottom: space(1) },
+  bigTotalLabel: { ...type.eyebrow, color: colors.textMuted },
+  bigTotalValue: { fontFamily, fontSize: 34, fontWeight: '800', letterSpacing: -1, color: colors.text },
   sumRow: { flexDirection: 'row', justifyContent: 'space-between', gap: space(2) },
   sumLabel: { fontFamily, fontSize: 15, color: colors.textMuted },
   sumValue: { fontFamily, fontSize: 15, color: colors.text, fontWeight: '700' },
   sumStrong: { fontSize: 17, fontWeight: '800', color: colors.text },
-  statusPill: { alignSelf: 'flex-start', borderRadius: radius.pill, paddingHorizontal: space(3), paddingVertical: space(1.5) },
+  statusPill: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', borderRadius: radius.pill, paddingHorizontal: space(3), paddingVertical: space(1.5) },
   statusPillText: { fontFamily, fontWeight: '800', fontSize: 14 },
   shareMsg: { fontFamily, fontSize: 14, fontWeight: '700', textAlign: 'center' },
-  suggestWrap: { gap: space(3) },
+  suggestWrap: { gap: space(4) },
   center: { alignItems: 'center', gap: space(2), padding: space(5) },
-  group: { gap: space(2), marginTop: space(2) },
-  cardGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: space(3) },
-  sCard: { flexGrow: 1, flexBasis: 260, maxWidth: 420, gap: space(2), padding: space(4) },
-  sCardHead: { flexDirection: 'row', flexWrap: 'wrap', gap: space(1.5) },
-  price: { fontFamily, fontSize: 15, fontWeight: '800', color: colors.primaryDark },
+  group: { gap: space(3), marginTop: space(3) },
+  groupHead: { flexDirection: 'row', alignItems: 'center', gap: space(2) },
+  cardGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: space(4) },
+  sCardWrap: { flexGrow: 1, flexBasis: 280, maxWidth: '100%' },
+  sCard: { flexGrow: 1, flexBasis: 280, gap: space(2.5), padding: space(5) },
+  hoverBase: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, height: '100%' },
+  hoverOn: { borderColor: colors.primary, transform: [{ translateY: -3 }], ...shadowRaised },
+  skeleton: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, minHeight: 170 },
+  skelLine: { height: 12, borderRadius: 6, backgroundColor: colors.surfaceAlt },
+  sCardHead: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space(1.5) },
+  sCardIcon: { width: 32, height: 32, borderRadius: 10, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center', marginRight: space(1) },
+  price: { fontFamily, fontSize: 15.5, fontWeight: '800', color: colors.primaryDark },
   priceSub: { fontFamily, fontSize: 13, color: colors.textMuted, marginTop: 2 },
-  links: { flexDirection: 'row', flexWrap: 'wrap', gap: space(3), marginTop: 'auto' },
+  links: { flexDirection: 'row', flexWrap: 'wrap', gap: space(3), marginTop: 'auto', paddingTop: space(1) },
   link: { fontFamily, fontSize: 14, fontWeight: '700', color: colors.primary, textDecorationLine: 'underline', paddingVertical: 4 },
 });

@@ -1,8 +1,9 @@
 import React from 'react';
-import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { LANGUAGES, useI18n } from '../i18n';
 import { colors, fontFamily, radius, space } from '../theme';
 import { SelectModal } from './SelectModal';
+import { Icon } from './Icon';
 
 export function LanguageSwitcher() {
   const { lang, setLang, t } = useI18n();
@@ -11,9 +12,7 @@ export function LanguageSwitcher() {
   const options = LANGUAGES.map((l) => ({ value: l.code, label: l.native, detail: l.code.toUpperCase() }));
   return (
     <View style={styles.wrap}>
-      <Text style={styles.globe} aria-hidden>
-        🌐
-      </Text>
+      <Icon name="globe" size={20} color={colors.primary} />
       <View style={compact ? styles.selectCompact : styles.select}>
         <SelectModal
           label={t('app.language')}
