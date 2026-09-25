@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "Spin — Travel Planner",
+    "slug": "spin-travel-planner",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.example.spintravel"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0B6E62",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "package": "com.example.spintravel"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "name": "Spin — Travel Planner",
+      "shortName": "Spin",
+      "themeColor": "#07524A",
+      "backgroundColor": "#F4F7F6",
+      "lang": "en"
+    },
+    "scheme": "spin",
+    "description": "Spin the wheels to pick a destination, trip length and budget, then get an approximate cost plan.",
+    "plugins": [
+      "expo-localization"
+    ]
+  }
+}
