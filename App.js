@@ -19,6 +19,7 @@ import { SetupScreen } from './src/screens/SetupScreen';
 import { WheelsFooter, WheelsScreen } from './src/screens/WheelsScreen';
 import { PlanScreen } from './src/screens/PlanScreen';
 import { CalculatorScreen } from './src/screens/CalculatorScreen';
+import { RouletteScreen } from './src/screens/RouletteScreen';
 
 function deviceCountry() {
   try {
@@ -107,9 +108,10 @@ function StepNav({ step, canGo, onGo }) {
 }
 
 /** Top-level switch between the wheel flow and the stand-alone calculator. */
-function ModeTabs({ mode, onWheel, onCalc, full }) {
+function ModeTabs({ mode, onRoulette, onWheel, onCalc, full }) {
   const { t } = useI18n();
   const tabs = [
+    { key: 'roulette', icon: 'sparkle', label: t('nav.modeRoulette'), onPress: onRoulette },
     { key: 'wheel', icon: 'spin', label: t('nav.modeWheel'), onPress: onWheel },
     { key: 'calc', icon: 'wallet', label: t('nav.modeCalc'), onPress: onCalc },
   ];
@@ -124,10 +126,10 @@ function ModeTabs({ mode, onWheel, onCalc, full }) {
             accessibilityState={{ selected: active }}
             aria-selected={active}
             onPress={tab.onPress}
-            style={({ hovered }) => [styles.modeTab, full && { flex: 1 }, hovered && !active && styles.modeTabHover, active && styles.modeTabActive]}
+            style={({ hovered }) => [styles.modeTab, full && styles.modeTabCompact, hovered && !active && styles.modeTabHover, active && styles.modeTabActive]}
           >
-            <Icon name={tab.icon} size={16} color={active ? colors.onPrimary : colors.primaryDark} />
-            <Text style={[styles.modeTabText, active && { color: colors.onPrimary }]} numberOfLines={1}>
+            {!full ? <Icon name={tab.icon} size={16} color={active ? colors.onPrimary : colors.primaryDark} /> : null}
+            <Text style={[styles.modeTabText, full && styles.modeTabTextCompact, active && { color: colors.onPrimary }]} numberOfLines={1}>
               {tab.label}
             </Text>
           </Touchable>
@@ -146,7 +148,7 @@ function Planner() {
   const scrollRef = useRef(null);
   const { isPhone } = useBreakpoint();
 
-  const canGo = (s) => s === 'home' || s === 'setup' || s === 'calc' || (s === 'wheels' && derived.setupCheck.valid) || (s === 'plan' && derived.trip != null);
+  const canGo = (s) => s === 'home' || s === 'setup' || s === 'calc' || s === 'roulette' || (s === 'wheels' && derived.setupCheck.valid) || (s === 'plan' && derived.trip != null);
   const go = (s) => {
     if (canGo(s)) dispatch({ type: 'step', step: s });
   };
@@ -155,9 +157,17 @@ function Planner() {
   const direction = state.stepDirection || 1;
 
   const resumeTarget = derived.trip ? 'plan' : derived.setupCheck.valid && state.selection.destination ? 'wheels' : null;
-  const mode = step === 'calc' ? 'calc' : 'wheel';
+  const source = state.plan.source || 'wheel';
+  const mode = step === 'calc' || step === 'roulette' ? step : step === 'plan' ? source : step === 'home' ? null : 'wheel';
+  const wheelTarget = source === 'wheel' && resumeTarget ? resumeTarget : 'setup';
   const modeTabs = (full) => (
-    <ModeTabs mode={mode} full={full} onWheel={() => mode !== 'wheel' && go(resumeTarget || 'home')} onCalc={() => go('calc')} />
+    <ModeTabs
+      mode={mode}
+      full={full}
+      onRoulette={() => go('roulette')}
+      onWheel={() => (mode !== 'wheel' ? go(wheelTarget) : null)}
+      onCalc={() => go('calc')}
+    />
   );
 
   useEffect(() => {
@@ -200,13 +210,14 @@ function Planner() {
       </View>
       <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={[styles.scrollContent, step === 'wheels' && { paddingBottom: space(32) }]} keyboardShouldPersistTaps="handled">
         <View style={styles.container} accessibilityRole="main">
-          {step !== 'home' && step !== 'calc' ? <StepNav step={step} canGo={canGo} onGo={go} /> : null}
+          {['setup', 'wheels'].includes(step) || (step === 'plan' && source === 'wheel') ? <StepNav step={step} canGo={canGo} onGo={go} /> : null}
           <StepTransition stepKey={step} direction={direction}>
-            {step === 'home' ? <Hero onStart={() => go('setup')} onCalc={() => go('calc')} hasProgress={!!resumeTarget} onResume={() => resumeTarget && go(resumeTarget)} /> : null}
+            {step === 'home' ? <Hero onRoulette={() => go('roulette')} onStart={() => go('setup')} onCalc={() => go('calc')} hasProgress={!!resumeTarget} onResume={() => resumeTarget && go(resumeTarget)} /> : null}
             {step === 'setup' ? <SetupScreen state={state} dispatch={dispatch} derived={derived} onContinue={() => go('wheels')} /> : null}
             {step === 'wheels' ? <WheelsScreen state={state} dispatch={dispatch} derived={derived} /> : null}
+            {step === 'roulette' ? <RouletteScreen state={state} dispatch={dispatch} onOpenPlan={() => dispatch({ type: 'step', step: 'plan' })} /> : null}
             {step === 'calc' ? <CalculatorScreen state={state} dispatch={dispatch} onOpenPlan={() => dispatch({ type: 'step', step: 'plan' })} /> : null}
-            {step === 'plan' ? <PlanScreen state={state} dispatch={dispatch} derived={derived} onRespin={() => go('wheels')} /> : null}
+            {step === 'plan' ? <PlanScreen state={state} dispatch={dispatch} derived={derived} onRespin={() => go(source === 'roulette' ? 'roulette' : source === 'calc' ? 'calc' : 'wheels')} /> : null}
           </StepTransition>
           <Text style={styles.footer} accessibilityRole={Platform.OS === 'web' ? 'contentinfo' : undefined}>
             {t('app.footer')}
@@ -252,6 +263,8 @@ const styles = StyleSheet.create({
   modeTabsFull: { alignSelf: 'stretch' },
   modeTabsRow: { width: '100%', maxWidth: maxContentWidth, alignSelf: 'center', marginTop: space(3) },
   modeTab: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space(1.5), minHeight: 38, paddingHorizontal: space(3.5), borderRadius: radius.pill, ...(Platform.OS === 'web' ? { cursor: 'pointer' } : null) },
+  modeTabCompact: { flexGrow: 1, flexShrink: 1, flexBasis: 'auto', paddingHorizontal: space(2) },
+  modeTabTextCompact: { fontSize: 12.5 },
   modeTabHover: { backgroundColor: colors.surface },
   modeTabActive: { backgroundColor: colors.primary },
   modeTabText: { fontFamily, fontSize: 14, fontWeight: '800', color: colors.primaryDark },

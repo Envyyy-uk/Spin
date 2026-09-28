@@ -206,3 +206,33 @@ test('cities: city changes price level, distance and ticket codes', async () => 
   const sug = demoSuggestions({ destination: 'IT', destinationCity: 'Florence', startDate: '2026-10-25', days: 5, travellers: 2, lang: 'uk' });
   assert.ok(sug.groups.stay[0].links[0].url.includes('Florence'));
 });
+
+test('roulette: destinations fit the shared pot, otherwise a challenge pool', async () => {
+  const { rouletteDestinations, isChallengeAmount, CHALLENGE_POOL } = await import('../src/lib/roulette.js');
+  const base = { origin: 'UA', originCity: 'Lviv', startDate: '2026-10-25', days: 5, travellers: 2, today: TODAY };
+  const rich = rouletteDestinations({ ...base, contribution: 700 });
+  assert.equal(rich.pot, 1400);
+  assert.equal(rich.challenge, false);
+  assert.ok(rich.codes.length > 3);
+  assert.ok(!rich.codes.includes('UA'));
+  for (const code of rich.codes) assert.ok(rich.costs[code] <= 1400, code);
+  // Far and expensive places don't fit a small pot.
+  assert.ok(!rich.codes.includes('AU'));
+  const broke = rouletteDestinations({ ...base, contribution: 0 });
+  assert.equal(broke.pot, 0);
+  assert.equal(broke.noneFit, true);
+  assert.equal(broke.challenge, true);
+  assert.equal(broke.codes.length, CHALLENGE_POOL);
+  // The challenge pool is the cheapest destinations, cheapest first.
+  const c = broke.costs;
+  assert.ok(c[broke.codes[0]] <= c[broke.codes[CHALLENGE_POOL - 1]]);
+  assert.equal(isChallengeAmount(100), true);
+  assert.equal(isChallengeAmount(200), false);
+});
+
+test('luxury level costs the most and uses premium transport', async () => {
+  const { calculateNeeds } = await import('../src/lib/calculator.js');
+  const r = calculateNeeds({ origin: 'UA', destination: 'IT', startDate: '2026-10-25', endDate: '2026-10-31', travellers: 2, today: TODAY });
+  assert.ok(r.levels.luxury.total.mid > r.levels.comfort.total.mid);
+  assert.equal(r.levels.luxury.meta.transport, 'premium');
+});

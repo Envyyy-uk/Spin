@@ -95,9 +95,9 @@ export function demoSuggestions(request) {
     { kind: 'guesthouse', perNight: [40, 75], tags: ['budget', 'standard'] },
     { kind: 'apartment', perNight: [70, 140], wholeUnit: true, tags: ['standard'] },
     { kind: 'hotel', perNight: [90, 160], tags: ['standard'] },
-    { kind: 'boutique', perNight: [160, 300], tags: ['comfort'] },
+    { kind: 'boutique', perNight: [160, 300], tags: ['comfort', 'luxury'] },
   ];
-  if (style === 'sea' || style === 'relax') stayTypes.push({ kind: 'resort', perNight: [150, 320], tags: ['comfort'] });
+  if (style === 'sea' || style === 'relax') stayTypes.push({ kind: 'resort', perNight: [150, 320], tags: ['comfort', 'luxury'] });
 
   const stay = stayTypes.map((s) => {
     // Hostels are priced per bed; apartments per unit sized for the group; rooms hold 2 guests.

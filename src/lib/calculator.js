@@ -16,7 +16,8 @@ export function calculateNeeds(p) {
   const people = Math.max(1, p.travellers);
   const levels = {};
   for (const stay of STAY_LEVELS) {
-    const e = estimateTripCosts({ ...p, days, travellers: people, stay });
+    // Luxury means business-class travel as well as 5★ stays.
+    const e = estimateTripCosts({ ...p, days, travellers: people, stay, transport: stay === 'luxury' ? 'premium' : p.transport });
     if (!e) return null;
     levels[stay] = e;
   }

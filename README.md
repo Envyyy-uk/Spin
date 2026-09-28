@@ -12,6 +12,17 @@ accommodation / activity / sightseeing ideas and a visual trip summary.
 > Suggestion cards are marked **“Example”** and link to public search pages
 > (Booking.com, Airbnb, GetYourGuide, Tripadvisor, Google Maps). Nothing claims availability.
 
+## Three ways to plan
+
+- **Roulette** (for adventurers): only the departure country/city, a start date and the number of
+  travellers are asked. The wheels then pick the number of days (1–10), how much each person puts
+  into a shared pot (0–1500 €) and, last, a destination the pot can actually pay for. Coral ⚡
+  sectors (0/50/100 €) and pots that cover nothing are a **challenge**: the destination wheel then
+  offers the 8 cheapest places and the result comes with survival tips. No settings on purpose.
+- **Custom wheels**: the original four configurable wheels with manual choices.
+- **Calculator**: pick country, city and dates yourself and see what the trip costs at the
+  budget, standard, comfort and **luxury** levels (5★ + business class), and whether your money is enough.
+
 ## Design & motion
 
 - **Visual language:** deep-ocean primary, sunset accent and warm sand background; generous spacing,

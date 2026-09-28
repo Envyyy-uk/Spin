@@ -1,6 +1,6 @@
 ## This project (Spin)
 
-- Single-screen app with in-app step navigation (`App.js`); Expo Router is not used.
+- Single-screen app with in-app step navigation (`App.js`); Expo Router is not used. Three modes: roulette (`RouletteScreen`, logic in `src/lib/roulette.js`), custom wheels (setup → wheels → plan) and calculator (`CalculatorScreen`); all can open the shared plan (`state.plan.source` says which).
 - UI strings live in `src/i18n/locales/*.js`; English is the default and fallback. Run `npm test` after editing strings — it checks every locale for missing keys and placeholder mismatches.
 - Pure logic lives in `src/lib`, `src/services`, `src/state/derived.js` and is tested with `node --test` (use explicit `.js` extensions in imports there).
 - All prices come from the demo model in `src/services/pricingService.js`; never present them as live prices.

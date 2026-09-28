@@ -12,19 +12,20 @@ import { diffDays, parseISO } from '../lib/dates.js';
 
 export const PRICING_SOURCE = 'demo';
 
-export const STAY_LEVELS = ['budget', 'standard', 'comfort'];
-export const TRANSPORT_LEVELS = ['economy', 'standard', 'flexible'];
+export const STAY_LEVELS = ['budget', 'standard', 'comfort', 'luxury'];
+export const TRANSPORT_LEVELS = ['economy', 'standard', 'flexible', 'premium'];
 export const COST_CATEGORIES = ['transport', 'accommodation', 'food', 'local', 'activities'];
 
 // Base values in EUR at priceIndex 1.0.
 const BASE = {
-  roomPerNight: { budget: 55, standard: 100, comfort: 180 }, // per room (2 guests)
-  foodPerPersonDay: { budget: 22, standard: 40, comfort: 70 },
-  localPerPersonDay: { budget: 5, standard: 9, comfort: 18 },
-  activitiesPerPersonDay: { budget: 10, standard: 22, comfort: 45 },
+  roomPerNight: { budget: 55, standard: 100, comfort: 180, luxury: 380 }, // per room (2 guests)
+  foodPerPersonDay: { budget: 22, standard: 40, comfort: 70, luxury: 140 },
+  localPerPersonDay: { budget: 5, standard: 9, comfort: 18, luxury: 45 },
+  activitiesPerPersonDay: { budget: 10, standard: 22, comfort: 45, luxury: 110 },
 };
 
-const TRANSPORT_FACTOR = { economy: 0.75, standard: 1, flexible: 1.5 };
+// premium ≈ business class / first-class rail (demo multiplier)
+const TRANSPORT_FACTOR = { economy: 0.75, standard: 1, flexible: 1.5, premium: 3 };
 
 const STYLE_FACTORS = {
   sea: { activities: 0.9, food: 1 },

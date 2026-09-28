@@ -15,6 +15,7 @@ import { Badge, Button, Card, ErrorText, Eyebrow, Field, H2, H3, Input, Notice, 
 import { Icon } from '../components/Icon';
 import { RouteHeader } from '../components/RouteHeader';
 import { TicketsSection } from '../components/TicketsSection';
+import { ChallengeCard } from '../components/ChallengeCard';
 import { AnimatedNumber, Reveal, USE_NATIVE_DRIVER, animateNextLayout, useAnimatedFraction, useBreakpoint, useReducedMotion, useAnimatedValue } from '../components/motion';
 import { SelectModal } from '../components/SelectModal';
 import { CitySelect } from '../components/CitySelect';
@@ -59,6 +60,11 @@ export function PlanScreen({ state, dispatch, derived, onRespin }) {
       <Reveal delay={80}>
         <ResultCard state={state} dispatch={dispatch} derived={derived} onRespin={onRespin} />
       </Reveal>
+      {state.plan.challenge ? (
+        <Reveal>
+          <ChallengeCard pot={trip.budget} currency={trip.currency} />
+        </Reveal>
+      ) : null}
       <View style={[styles.cols, wide && styles.colsWide]}>
         <Reveal style={wide ? styles.colMain : null}>
           <EstimateCard trip={trip} estimate={estimate} status={status} fx={fx} dispatch={dispatch} state={state} derived={derived} today={today} />
@@ -246,7 +252,11 @@ function ResultCard({ state, dispatch, derived, onRespin }) {
           onPress={toggleEditing}
           small
         />
-        <Button variant="light" icon="spin" label={t('result.respin')} onPress={onRespin} small />
+        {state.plan.source === 'calc' ? (
+          <Button variant="light" icon="arrowLeft" label={t('nav.modeCalc')} onPress={onRespin} small />
+        ) : (
+          <Button variant="light" icon="spin" label={t('result.respin')} onPress={onRespin} small />
+        )}
       </View>
     </Card>
   );

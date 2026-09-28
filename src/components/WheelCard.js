@@ -28,6 +28,7 @@ export function WheelCard({
   size,
   style,
   headerExtra,
+  emptyText,
 }) {
   const { t, tp } = useI18n();
   const reduced = useReducedMotion();
@@ -56,11 +57,13 @@ export function WheelCard({
           <Wheel title={title} options={options} selectedIndex={selectedIndex} onSelect={onSelect} spinSignal={spinSignal} size={size} disabled={options.length === 0} />
           {note ? <P muted style={styles.note}>{note}</P> : null}
           {error ? <ErrorText>{error}</ErrorText> : null}
-          {options.length === 0 && !error ? <ErrorText>{t('wheels.noOptions')}</ErrorText> : null}
-          <View style={styles.manual}>
-            <Text style={styles.manualLabel}>{t('wheels.manual')}</Text>
-            {manual}
-          </View>
+          {options.length === 0 && !error ? emptyText ? <P muted style={styles.note}>{emptyText}</P> : <ErrorText>{t('wheels.noOptions')}</ErrorText> : null}
+          {manual ? (
+            <View style={styles.manual}>
+              <Text style={styles.manualLabel}>{t('wheels.manual')}</Text>
+              {manual}
+            </View>
+          ) : null}
           {settings ? (
             <View style={styles.settingsBox}>
               <Touchable

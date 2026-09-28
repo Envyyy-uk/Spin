@@ -240,6 +240,7 @@ export function CalculatorScreen({ state, dispatch, onOpenPlan }) {
           {STAY_LEVELS.map((lvl) => {
             const e = result.levels[lvl];
             const on = calc.stay === lvl;
+            const lux = lvl === 'luxury';
             const c = amount ? result.comparison[lvl] : null;
             return (
               <Touchable
@@ -248,19 +249,19 @@ export function CalculatorScreen({ state, dispatch, onOpenPlan }) {
                 accessibilityState={{ checked: on, selected: on }}
                 aria-checked={on}
                 onPress={() => set({ stay: lvl })}
-                style={({ hovered }) => [styles.level, hovered && !on && styles.levelHover, on && styles.levelOn]}
+                style={({ hovered }) => [styles.level, lux && styles.levelLux, hovered && !on && styles.levelHover, on && (lux ? styles.levelLuxOn : styles.levelOn)]}
               >
                 <View style={styles.levelHead}>
-                  <Icon name={lvl === 'budget' ? 'bed' : lvl === 'standard' ? 'check' : 'sparkle'} size={18} color={on ? colors.primaryDark : colors.textMuted} />
-                  <Text style={[styles.levelName, on && { color: colors.primaryDark }]}>{t(`estimate.stay.${lvl}`)}</Text>
-                  {on ? <Badge label={t('calc.selected')} tone="info" /> : null}
+                  <Icon name={lvl === 'budget' ? 'bed' : lvl === 'standard' ? 'check' : 'sparkle'} size={18} color={lux ? colors.sun : on ? colors.primaryDark : colors.textMuted} />
+                  <Text style={[styles.levelName, on && { color: colors.primaryDark }, lux && { color: colors.sun }]}>{t(`estimate.stay.${lvl}`)}</Text>
+                  {on ? <Badge label={t('calc.selected')} tone={lux ? 'accent' : 'info'} /> : null}
                 </View>
-                <Text style={styles.levelValue}>≈ {money(e.total.mid)}</Text>
-                <Text style={styles.levelSub}>{t(`calc.levelDesc.${lvl}`)}</Text>
+                <Text style={[styles.levelValue, lux && { color: colors.onNight }]}>≈ {money(e.total.mid)}</Text>
+                <Text style={[styles.levelSub, lux && { color: colors.onNightMuted }]}>{t(`calc.levelDesc.${lvl}`)}</Text>
                 {c ? (
                   <View style={styles.levelFit}>
-                    <Icon name={c.diff >= 0 ? 'check' : 'x'} size={14} color={c.diff >= 0 ? colors.success : colors.danger} strokeWidth={2.8} />
-                    <Text style={[styles.levelFitText, { color: c.diff >= 0 ? colors.success : colors.danger }]}>
+                    <Icon name={c.diff >= 0 ? 'check' : 'x'} size={14} color={lux ? (c.diff >= 0 ? '#7fe0a6' : '#ffb4a2') : c.diff >= 0 ? colors.success : colors.danger} strokeWidth={2.8} />
+                    <Text style={[styles.levelFitText, { color: lux ? (c.diff >= 0 ? '#7fe0a6' : '#ffb4a2') : c.diff >= 0 ? colors.success : colors.danger }]}>
                       {c.diff >= 0 ? t('calc.fits') : t('calc.missing', { amount: money(-c.diff) })}
                     </Text>
                   </View>
@@ -277,7 +278,7 @@ export function CalculatorScreen({ state, dispatch, onOpenPlan }) {
           label={t('estimate.transportLevel')}
           value={calc.transport}
           onChange={(v) => set({ transport: v })}
-          options={['economy', 'standard', 'flexible'].map((k) => ({ value: k, label: t(`estimate.transport.${k}`), icon: k === 'economy' ? 'plane' : undefined }))}
+          options={['economy', 'standard', 'flexible', 'premium'].map((k) => ({ value: k, label: t(`estimate.transport.${k}`), icon: k === 'economy' ? 'plane' : undefined }))}
         />
         {COST_CATEGORIES.map((key) => {
           const c = selected.categories[key];
@@ -386,10 +387,12 @@ const styles = StyleSheet.create({
   verdictTitle: { fontFamily, fontSize: 18, fontWeight: '800' },
   verdictDesc: { ...type.small, color: colors.text, marginTop: 2 },
   levels: { gap: space(3) },
-  levelsRow: { flexDirection: 'row' },
-  level: { flex: 1, gap: space(1.5), padding: space(4), borderRadius: radius.lg, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.surface },
+  levelsRow: { flexDirection: 'row', flexWrap: 'wrap' },
+  level: { flexGrow: 1, flexBasis: 200, gap: space(1.5), padding: space(4), borderRadius: radius.lg, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.surface },
   levelHover: { borderColor: colors.primary },
   levelOn: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+  levelLux: { backgroundColor: colors.night, borderColor: colors.night },
+  levelLuxOn: { borderColor: colors.sun, borderWidth: 2 },
   levelHead: { flexDirection: 'row', alignItems: 'center', gap: space(2), flexWrap: 'wrap' },
   levelName: { fontFamily, fontSize: 15, fontWeight: '800', color: colors.text, flex: 1 },
   levelValue: { fontFamily, fontSize: 22, fontWeight: '800', letterSpacing: -0.4, color: colors.text },

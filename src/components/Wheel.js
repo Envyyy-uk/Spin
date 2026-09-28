@@ -198,13 +198,13 @@ export function Wheel({ title, options, selectedIndex, onSelect, spinSignal, siz
             <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
               <Circle cx={cx} cy={cy} r={r + 4} fill={colors.primaryDark} />
               {n === 0 ? <Circle cx={cx} cy={cy} r={r} fill={colors.surfaceAlt} /> : null}
-              {n === 1 ? <Circle cx={cx} cy={cy} r={r} fill={segmentColor(0, 1)} /> : null}
+              {n === 1 ? <Circle cx={cx} cy={cy} r={r} fill={options[0].color || segmentColor(0, 1)} /> : null}
               {n > 1
                 ? options.map((o, i) => (
                     <Path
                       key={`seg-${o.value}`}
                       d={segmentPath(cx, cy, r, i * a, (i + 1) * a)}
-                      fill={segmentColor(i, n)}
+                      fill={o.color || segmentColor(i, n)}
                       stroke={i === selectedIndex ? colors.text : colors.surface}
                       strokeWidth={i === selectedIndex ? 2.5 : 1}
                     />

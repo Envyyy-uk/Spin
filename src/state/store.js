@@ -4,7 +4,7 @@ import { addDays, todayISO } from '../lib/dates';
 import { getCurrency } from '../data/currencies';
 import { getCountry } from '../data/countries';
 
-const STEP_ORDER = ['home', 'setup', 'wheels', 'plan', 'calc'];
+const STEP_ORDER = ['home', 'roulette', 'setup', 'wheels', 'plan', 'calc'];
 
 export const STYLE_KEYS = ['sea', 'culture', 'nature', 'food', 'adventure', 'relax'];
 const STORAGE_KEY = 'spin.state.v1';
@@ -35,7 +35,18 @@ export function initialState(today = todayISO(), origin = '') {
     budgetSettings: { min: '500', max: '5000', step: '500' },
     styleSettings: { enabled: false, options: [...STYLE_KEYS] },
     selection: { destination: null, destinationCity: null, duration: null, budget: null, style: null, tripStart: null },
-    plan: { stay: 'standard', transport: 'standard', mode: null },
+    // source: which mode filled the plan — 'wheel' | 'roulette' | 'calc'
+    plan: { stay: 'standard', transport: 'standard', mode: null, challenge: false, source: 'wheel' },
+    // Travel roulette: only start point, date and people are asked.
+    roulette: {
+      origin,
+      originCity: '',
+      startDate: addDays(today, 21),
+      travellers: '2',
+      days: null,
+      contribution: null,
+      destination: null,
+    },
     // Stand-alone "how much do I need" calculator (no wheels).
     calc: {
       origin,
@@ -69,7 +80,10 @@ export function reducer(state, action) {
     case 'step': {
       const from = STEP_ORDER.indexOf(state.step);
       const to = STEP_ORDER.indexOf(action.step);
-      return { ...state, step: action.step, stepDirection: to >= from ? 1 : -1 };
+      const next = { ...state, step: action.step, stepDirection: to >= from ? 1 : -1 };
+      // Entering the custom-wheels flow makes it the plan's source again.
+      if (action.step === 'setup' || action.step === 'wheels') next.plan = { ...state.plan, source: 'wheel', challenge: false };
+      return next;
     }
     case 'setup': {
       const setup = { ...state.setup, ...action.patch };
@@ -135,6 +149,35 @@ export function reducer(state, action) {
       }
       return { ...state, calc };
     }
+    case 'roulette': {
+      const roulette = { ...state.roulette, ...action.patch };
+      if (action.patch.origin && action.patch.origin !== state.roulette.origin && !('originCity' in action.patch)) roulette.originCity = '';
+      // Anything that changes what the pot can buy resets the destination.
+      const resets = ['origin', 'originCity', 'startDate', 'travellers', 'days', 'contribution'];
+      if (resets.some((k) => k in action.patch && action.patch[k] !== state.roulette[k]) && !('destination' in action.patch)) roulette.destination = null;
+      return { ...state, roulette };
+    }
+    case 'rouletteToPlan': {
+      const r = state.roulette;
+      const pot = r.contribution * Number(r.travellers);
+      return {
+        ...state,
+        setup: {
+          ...state.setup,
+          origin: r.origin,
+          originCity: r.originCity,
+          dateMode: 'exact',
+          startDate: r.startDate,
+          endDate: addDays(r.startDate, r.days - 1),
+          travellers: r.travellers,
+          currency: 'EUR',
+          rate: '1',
+        },
+        // A 0 € pot still needs a positive budget for the plan; 1 € keeps the maths honest.
+        selection: { ...state.selection, destination: r.destination, destinationCity: null, budget: Math.max(1, pot), duration: null, tripStart: null },
+        plan: { ...state.plan, stay: action.challenge ? 'budget' : 'standard', transport: action.challenge ? 'economy' : 'standard', mode: null, challenge: !!action.challenge, source: 'roulette' },
+      };
+    }
     case 'calcToPlan': {
       // Open the calculator's trip as a full plan (budget = the amount given).
       const c = state.calc;
@@ -142,7 +185,7 @@ export function reducer(state, action) {
         ...state,
         setup: { ...state.setup, origin: c.origin, originCity: c.originCity, dateMode: 'exact', startDate: c.startDate, endDate: c.endDate, travellers: c.travellers, currency: c.currency, rate: c.rate },
         selection: { ...state.selection, destination: c.destination, destinationCity: c.destinationCity || null, budget: action.budget, duration: null, tripStart: null },
-        plan: { ...state.plan, stay: c.stay, transport: c.transport, mode: c.mode },
+        plan: { ...state.plan, stay: c.stay, transport: c.stay === 'luxury' ? 'premium' : c.transport, mode: c.mode, challenge: false, source: 'calc' },
       };
     }
     case 'calcCurrency': {
@@ -169,11 +212,13 @@ export function reducer(state, action) {
 function sanitize(saved, base) {
   if (!saved || typeof saved !== 'object') return null;
   const out = {};
-  for (const key of ['setup', 'destSettings', 'durationSettings', 'budgetSettings', 'styleSettings', 'selection', 'plan', 'calc']) {
+  for (const key of ['setup', 'destSettings', 'durationSettings', 'budgetSettings', 'styleSettings', 'selection', 'plan', 'calc', 'roulette']) {
     if (saved[key] && typeof saved[key] === 'object') out[key] = { ...base[key], ...saved[key] };
   }
   if (out.setup && out.setup.origin && !getCountry(out.setup.origin)) out.setup.origin = '';
   if (out.calc && out.calc.origin && !getCountry(out.calc.origin)) out.calc.origin = '';
+  if (out.roulette && out.roulette.origin && !getCountry(out.roulette.origin)) out.roulette.origin = '';
+  if (out.roulette && out.roulette.destination && !getCountry(out.roulette.destination)) out.roulette.destination = null;
   if (out.calc && out.calc.destination && !getCountry(out.calc.destination)) out.calc.destination = '';
   if (out.destSettings && !Array.isArray(out.destSettings.excluded)) out.destSettings.excluded = [];
   if (out.styleSettings && !Array.isArray(out.styleSettings.options)) out.styleSettings.options = [...STYLE_KEYS];
