@@ -12,6 +12,7 @@
 
 import { config, isDemoMode } from './config.js';
 import { getCountry } from '../data/countries.js';
+import { place as cityPlace } from '../data/cities.js';
 import { getHighlights } from '../data/highlights.js';
 import { tripEnd } from '../lib/dates.js';
 import {
@@ -62,6 +63,8 @@ export function buildRequest(trip) {
   return {
     origin: trip.origin,
     destination: trip.destination,
+    originCity: trip.originCity || null,
+    destinationCity: trip.destinationCity || null,
     startDate: trip.startDate,
     endDate: tripEnd(trip.startDate, trip.days),
     days: trip.days,
@@ -76,8 +79,10 @@ export function buildRequest(trip) {
 export function demoSuggestions(request) {
   const c = getCountry(request.destination);
   if (!c) return { groups: { stay: [], activities: [], places: [] }, source: 'demo' };
-  const idx = c.priceIndex;
-  const place = `${c.hub}, ${c.names.en}`;
+  const pl = cityPlace(c.code, request.destinationCity);
+  const city = pl.city;
+  const idx = pl.priceIndex;
+  const place = `${city}, ${c.names.en}`;
   const checkIn = request.startDate;
   const checkOut = tripEnd(request.startDate, Math.max(2, request.days));
   const adults = request.travellers;
@@ -110,7 +115,7 @@ export function demoSuggestions(request) {
       kind: s.kind,
       titleKey: `suggest.stay.${s.kind}.title`,
       descKey: `suggest.stay.${s.kind}.desc`,
-      descParams: { city: c.hub, rooms, people: adults, units },
+      descParams: { city: city, rooms, people: adults, units },
       price: { ...price, unit: 'perNight', scope: 'group' },
       links,
       tags: s.tags,
@@ -128,11 +133,11 @@ export function demoSuggestions(request) {
       kind,
       titleKey: `suggest.activity.${kind}.title`,
       descKey: `suggest.activity.${kind}.desc`,
-      descParams: { city: c.hub },
+      descParams: { city: city },
       price: { ...pp, unit: 'perPerson', groupMin: pp.min * adults, groupMax: pp.max * adults },
       links: [
-        { provider: 'GetYourGuide', url: getYourGuideSearch(`${c.hub}`) },
-        { provider: 'Tripadvisor', url: tripadvisorSearch(`${c.hub} things to do`) },
+        { provider: 'GetYourGuide', url: getYourGuideSearch(`${city}`) },
+        { provider: 'Tripadvisor', url: tripadvisorSearch(`${city} things to do`) },
       ],
       tags: style && STYLE_ACTIVITIES[style].includes(kind) ? ['match'] : [],
     });
@@ -164,11 +169,11 @@ export function demoSuggestions(request) {
       kind: f.kind,
       titleKey: `suggest.food.${f.kind}.title`,
       descKey: `suggest.food.${f.kind}.desc`,
-      descParams: { city: c.hub },
+      descParams: { city: city },
       price: { ...pp, unit: 'perPerson', groupMin: pp.min * adults, groupMax: pp.max * adults },
       links: [
-        { provider: 'Google Maps', url: mapsSearch(`${f.kind === 'streetFood' ? 'street food' : f.kind === 'fineDining' ? 'fine dining' : 'restaurants'} ${c.hub}`) },
-        { provider: 'Tripadvisor', url: tripadvisorSearch(`${c.hub} restaurants`) },
+        { provider: 'Google Maps', url: mapsSearch(`${f.kind === 'streetFood' ? 'street food' : f.kind === 'fineDining' ? 'fine dining' : 'restaurants'} ${city}`) },
+        { provider: 'Tripadvisor', url: tripadvisorSearch(`${city} restaurants`) },
       ],
     });
   });

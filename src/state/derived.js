@@ -1,4 +1,5 @@
 import { COUNTRIES, getCountry } from '../data/countries.js';
+import { findCity } from '../data/cities.js';
 import { groundPossible } from '../services/pricingService.js';
 import { addDays, diffDays, parseISO, tripEnd } from '../lib/dates.js';
 import {
@@ -59,6 +60,9 @@ export function derive(state, today) {
     ? {
         origin: setup.origin,
         destination: selection.destination,
+        // Only cities from the list are used; otherwise the country's main city.
+        originCity: findCity(setup.origin, setup.originCity)?.name || null,
+        destinationCity: findCity(selection.destination, selection.destinationCity)?.name || null,
         startDate,
         endDate: tripEnd(startDate, days),
         days,
@@ -71,7 +75,7 @@ export function derive(state, today) {
         stay: state.plan.stay,
         transport: state.plan.transport,
         // Travel mode chosen in the tickets section; null = the model's default for the route.
-        mode: state.plan.mode === 'ground' && !groundPossible(setup.origin, selection.destination) ? null : state.plan.mode || null,
+        mode: state.plan.mode === 'ground' && !groundPossible(setup.origin, selection.destination, setup.originCity, selection.destinationCity) ? null : state.plan.mode || null,
       }
     : null;
 

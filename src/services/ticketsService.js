@@ -8,7 +8,8 @@
 // To show live fares later, implement `fetchFares(request)` against your own
 // backend (which holds the provider keys) and merge its results into `modes`.
 
-import { cityCode, getCountry } from '../data/countries.js';
+import { getCountry } from '../data/countries.js';
+import { place } from '../data/cities.js';
 import { tripEnd } from '../lib/dates.js';
 import { defaultMode, groundPossible, transportCost } from './pricingService.js';
 import {
@@ -33,15 +34,19 @@ export function getTicketOptions(trip) {
   const depart = trip.startDate;
   const ret = tripEnd(trip.startDate, trip.days);
   const adults = Math.max(1, trip.travellers);
-  const from = `${o.hub}, ${o.names.en}`;
-  const to = `${d.hub}, ${d.names.en}`;
-  const fromCode = cityCode(o.code);
-  const toCode = cityCode(d.code);
-  const ground = groundPossible(o.code, d.code);
+  const op = place(o.code, trip.originCity);
+  const dp = place(d.code, trip.destinationCity);
+  const fromCity = op.city;
+  const toCity = dp.city;
+  const from = `${fromCity}, ${o.names.en}`;
+  const to = `${toCity}, ${d.names.en}`;
+  const fromCode = op.iata;
+  const toCode = dp.iata;
+  const ground = groundPossible(o.code, d.code, trip.originCity, trip.destinationCity);
   const costInput = { ...trip, travellers: adults };
 
   const flightProviders = [
-    { id: 'googleFlights', name: 'Google Flights', kind: 'flight', url: flightsSearch({ from: o.hub, to: d.hub, depart, ret, adults }) },
+    { id: 'googleFlights', name: 'Google Flights', kind: 'flight', url: flightsSearch({ from: fromCity, to: toCity, depart, ret, adults }) },
     fromCode && toCode ? { id: 'skyscanner', name: 'Skyscanner', kind: 'flight', url: skyscannerSearch({ fromCode, toCode, depart, ret, adults }) } : null,
     fromCode && toCode ? { id: 'kayak', name: 'KAYAK', kind: 'flight', url: kayakSearch({ fromCode, toCode, depart, ret, adults }) } : null,
   ].filter(Boolean);
@@ -49,18 +54,18 @@ export function getTicketOptions(trip) {
   const groundProviders = [
     { id: 'rome2rio', name: 'Rome2Rio', kind: 'all', url: rome2rioSearch({ from, to }) },
     { id: 'googleTransit', name: 'Google Maps', kind: 'train', url: transitDirections({ from, to }) },
-    { id: 'blablacar', name: 'BlaBlaCar', kind: 'car', url: blablacarSearch({ from: o.hub, to: d.hub, depart, adults }) },
-    { id: 'busSearch', name: 'Google', kind: 'bus', url: webSearch(`bus tickets ${o.hub} to ${d.hub}`) },
-    { id: 'trainSearch', name: 'Google', kind: 'train', url: webSearch(`train tickets ${o.hub} to ${d.hub}`) },
+    { id: 'blablacar', name: 'BlaBlaCar', kind: 'car', url: blablacarSearch({ from: fromCity, to: toCity, depart, adults }) },
+    { id: 'busSearch', name: 'Google', kind: 'bus', url: webSearch(`bus tickets ${fromCity} to ${toCity}`) },
+    { id: 'trainSearch', name: 'Google', kind: 'train', url: webSearch(`train tickets ${fromCity} to ${toCity}`) },
   ];
 
   return {
     source: 'demo',
-    route: { from: o.code, to: d.code, fromCity: o.hub, toCity: d.hub, fromCode, toCode },
+    route: { from: o.code, to: d.code, fromCity, toCity, fromCode, toCode },
     depart,
     ret,
     passengers: adults,
-    defaultMode: defaultMode(o.code, d.code),
+    defaultMode: defaultMode(o.code, d.code, trip.originCity, trip.destinationCity),
     modes: {
       flight: { available: true, estimate: transportCost({ ...costInput, mode: 'flight' }), providers: flightProviders },
       ground: {

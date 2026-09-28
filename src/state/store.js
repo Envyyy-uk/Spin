@@ -20,6 +20,7 @@ export function initialState(today = todayISO(), origin = '') {
     step: 'home',
     setup: {
       origin,
+      originCity: '',
       dateMode: 'exact',
       startDate: addDays(today, 30),
       endDate: addDays(today, 36),
@@ -33,12 +34,14 @@ export function initialState(today = todayISO(), origin = '') {
     durationSettings: { min: '3', max: '14', step: '1' },
     budgetSettings: { min: '500', max: '5000', step: '500' },
     styleSettings: { enabled: false, options: [...STYLE_KEYS] },
-    selection: { destination: null, duration: null, budget: null, style: null, tripStart: null },
+    selection: { destination: null, destinationCity: null, duration: null, budget: null, style: null, tripStart: null },
     plan: { stay: 'standard', transport: 'standard', mode: null },
     // Stand-alone "how much do I need" calculator (no wheels).
     calc: {
       origin,
+      originCity: '',
       destination: '',
+      destinationCity: '',
       startDate: addDays(today, 30),
       endDate: addDays(today, 36),
       travellers: '2',
@@ -70,6 +73,7 @@ export function reducer(state, action) {
     }
     case 'setup': {
       const setup = { ...state.setup, ...action.patch };
+      if (action.patch.origin && action.patch.origin !== state.setup.origin && !('originCity' in action.patch)) setup.originCity = '';
       const selection = { ...state.selection };
       if (action.patch.origin && selection.destination === action.patch.origin) selection.destination = null;
       // A travel mode chosen for one route shouldn't carry over to another.
@@ -110,7 +114,11 @@ export function reducer(state, action) {
     }
     case 'select': {
       const next = { ...state, selection: { ...state.selection, ...action.patch } };
-      if (action.patch.destination && action.patch.destination !== state.selection.destination) next.plan = { ...state.plan, mode: null };
+      if (action.patch.destination && action.patch.destination !== state.selection.destination) {
+        next.plan = { ...state.plan, mode: null };
+        if (!('destinationCity' in action.patch)) next.selection.destinationCity = null;
+      }
+      if ('destinationCity' in action.patch && action.patch.destinationCity !== state.selection.destinationCity) next.plan = { ...state.plan, mode: null };
       return next;
     }
     case 'calc': {
@@ -118,8 +126,13 @@ export function reducer(state, action) {
       const routeChanged =
         (action.patch.origin && action.patch.origin !== state.calc.origin) ||
         (action.patch.destination && action.patch.destination !== state.calc.destination);
-      if (routeChanged) calc.mode = null;
-      if (action.patch.origin && calc.destination === action.patch.origin) calc.destination = '';
+      if (routeChanged || 'originCity' in action.patch || 'destinationCity' in action.patch) calc.mode = null;
+      if (action.patch.origin && action.patch.origin !== state.calc.origin && !('originCity' in action.patch)) calc.originCity = '';
+      if (action.patch.destination && action.patch.destination !== state.calc.destination && !('destinationCity' in action.patch)) calc.destinationCity = '';
+      if (action.patch.origin && calc.destination === action.patch.origin) {
+        calc.destination = '';
+        calc.destinationCity = '';
+      }
       return { ...state, calc };
     }
     case 'calcToPlan': {
@@ -127,8 +140,8 @@ export function reducer(state, action) {
       const c = state.calc;
       return {
         ...state,
-        setup: { ...state.setup, origin: c.origin, dateMode: 'exact', startDate: c.startDate, endDate: c.endDate, travellers: c.travellers, currency: c.currency, rate: c.rate },
-        selection: { ...state.selection, destination: c.destination, budget: action.budget, duration: null, tripStart: null },
+        setup: { ...state.setup, origin: c.origin, originCity: c.originCity, dateMode: 'exact', startDate: c.startDate, endDate: c.endDate, travellers: c.travellers, currency: c.currency, rate: c.rate },
+        selection: { ...state.selection, destination: c.destination, destinationCity: c.destinationCity || null, budget: action.budget, duration: null, tripStart: null },
         plan: { ...state.plan, stay: c.stay, transport: c.transport, mode: c.mode },
       };
     }

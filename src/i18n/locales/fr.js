@@ -1,5 +1,12 @@
 // Français
 export default {
+  city: {
+    origin: "Ville de départ",
+    destination: "Ville de destination",
+    hint: "Les prix, la distance et les billets sont estimés pour cette ville.",
+    main: "ville principale",
+    label: "Ville",
+  },
   calc: {
     eyebrow: "Calculateur",
     title: "Combien coûtera vraiment le voyage ?",

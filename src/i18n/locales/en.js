@@ -1,5 +1,12 @@
 // English — default language and fallback for every missing key.
 export default {
+  city: {
+    origin: "Departure city",
+    destination: "Destination city",
+    hint: "Prices, distance and tickets are estimated for this city.",
+    main: "main city",
+    label: "City",
+  },
   calc: {
     eyebrow: "Calculator",
     title: "How much will the trip really cost?",

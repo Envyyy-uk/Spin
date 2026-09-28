@@ -7,7 +7,7 @@
 // shape in a remote provider (see src/services/config.js) and swap it in
 // `estimateTripCosts`.
 
-import { getCountry } from '../data/countries.js';
+import { place } from '../data/cities.js';
 import { diffDays, parseISO } from '../lib/dates.js';
 
 export const PRICING_SOURCE = 'demo';
@@ -91,10 +91,10 @@ function landGroup(code) {
   return Object.keys(LAND_GROUPS).find((g) => LAND_GROUPS[g].includes(code)) || 'eurasia';
 }
 
-/** Whether a bus/train/car trip between the two countries is realistic at all. */
-export function groundPossible(originCode, destCode) {
-  const o = getCountry(originCode);
-  const d = getCountry(destCode);
+/** Whether a bus/train/car trip between the two places is realistic at all. */
+export function groundPossible(originCode, destCode, originCity, destCity) {
+  const o = place(originCode, originCity);
+  const d = place(destCode, destCity);
   if (!o || !d) return false;
   if (ISLANDS.includes(originCode) || ISLANDS.includes(destCode)) return false;
   if (landGroup(originCode) !== landGroup(destCode)) return false;
@@ -102,9 +102,9 @@ export function groundPossible(originCode, destCode) {
 }
 
 /** Default mode the cost model assumes for a route. */
-export function defaultMode(originCode, destCode) {
-  const km = distanceKm(getCountry(originCode), getCountry(destCode));
-  return km <= GROUND_TRANSPORT_MAX_KM && groundPossible(originCode, destCode) ? 'ground' : 'flight';
+export function defaultMode(originCode, destCode, originCity, destCity) {
+  const km = distanceKm(place(originCode, originCity), place(destCode, destCity));
+  return km <= GROUND_TRANSPORT_MAX_KM && groundPossible(originCode, destCode, originCity, destCity) ? 'ground' : 'flight';
 }
 
 /**
@@ -112,12 +112,12 @@ export function defaultMode(originCode, destCode) {
  * `mode` forces 'flight' or 'ground'; otherwise the route's default is used.
  * @returns {{ mode, km, perPerson: {mid,min,max}, group: {mid,min,max}, groupMid }}
  */
-export function transportCost({ origin, destination, travellers, transport = 'standard', startDate, today, mode }) {
-  const o = getCountry(origin);
-  const d = getCountry(destination);
+export function transportCost({ origin, destination, originCity, destinationCity, travellers, transport = 'standard', startDate, today, mode }) {
+  const o = place(origin, originCity);
+  const d = place(destination, destinationCity);
   if (!o || !d) return null;
   const km = distanceKm(o, d);
-  const m = mode || defaultMode(origin, destination);
+  const m = mode || defaultMode(origin, destination, originCity, destinationCity);
   const people = Math.max(1, Math.round(travellers || 1));
   const level = TRANSPORT_LEVELS.includes(transport) ? transport : 'standard';
   // Round trip per person; flights include ~30 EUR of airport transfers.
@@ -142,8 +142,8 @@ export function transportCost({ origin, destination, travellers, transport = 'st
  * @param {string} p.today         ISO date used for lead-time pricing
  */
 export function estimateTripCosts(p) {
-  const origin = getCountry(p.origin);
-  const dest = getCountry(p.destination);
+  const origin = place(p.origin, p.originCity);
+  const dest = place(p.destination, p.destinationCity);
   if (!origin || !dest) return null;
   const days = Math.max(1, Math.round(p.days));
   const people = Math.max(1, Math.round(p.travellers));

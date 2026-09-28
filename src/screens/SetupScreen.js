@@ -11,6 +11,7 @@ import { Icon } from '../components/Icon';
 import { Reveal, useBreakpoint } from '../components/motion';
 import { SelectModal } from '../components/SelectModal';
 import { DateField } from '../components/DateField';
+import { CitySelect } from '../components/CitySelect';
 
 export function SetupScreen({ state, dispatch, derived, onContinue }) {
   const { t, tp, lang } = useI18n();
@@ -69,6 +70,11 @@ export function SetupScreen({ state, dispatch, derived, onContinue }) {
           error={err('origin')}
         />
       </Field>
+      {setup.origin ? (
+        <Field label={t('city.origin')} icon="pin" hint={t('city.hint')}>
+          <CitySelect countryCode={setup.origin} value={setup.originCity} onChange={(v) => set({ originCity: v })} label={t('city.origin')} />
+        </Field>
+      ) : null}
       <Field label={t('setup.travellers')} hint={t('setup.travellersHint')} error={err('travellers')} style={{ marginBottom: 0 }}>
         <View style={styles.stepper}>
           <Touchable

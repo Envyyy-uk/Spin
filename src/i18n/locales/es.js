@@ -1,5 +1,12 @@
 // Español
 export default {
+  city: {
+    origin: "Ciudad de salida",
+    destination: "Ciudad de destino",
+    hint: "Precios, distancia y billetes se calculan para esta ciudad.",
+    main: "ciudad principal",
+    label: "Ciudad",
+  },
   calc: {
     eyebrow: "Calculadora",
     title: "¿Cuánto costará de verdad el viaje?",

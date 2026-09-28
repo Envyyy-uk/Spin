@@ -1,5 +1,12 @@
 // Deutsch
 export default {
+  city: {
+    origin: "Abreisestadt",
+    destination: "Zielstadt",
+    hint: "Preise, Entfernung und Tickets werden für diese Stadt geschätzt.",
+    main: "wichtigste Stadt",
+    label: "Stadt",
+  },
   calc: {
     eyebrow: "Rechner",
     title: "Was kostet die Reise wirklich?",

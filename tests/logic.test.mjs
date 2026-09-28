@@ -185,3 +185,24 @@ test('calculator: levels are ordered and the amount is compared', async () => {
   assert.equal(calculateNeeds({ ...base, amountEur: 10 }).affordable, null);
   assert.equal(calculateNeeds({ ...base, endDate: '2026-10-20' }), null);
 });
+
+test('cities: city changes price level, distance and ticket codes', async () => {
+  const { getCities, place } = await import('../src/data/cities.js');
+  assert.equal(getCities('IT')[0].name, 'Rome');
+  assert.equal(place('IT', 'Nowhere').city, 'Rome'); // unknown city → hub
+  assert.equal(place('CH', 'Zermatt').iata, 'ZRH'); // no airport → country code
+  const base = { origin: 'UA', destination: 'IT', startDate: '2026-10-25', days: 5, travellers: 2, today: TODAY };
+  const venice = estimateTripCosts({ ...base, destinationCity: 'Venice' });
+  const naples = estimateTripCosts({ ...base, destinationCity: 'Naples' });
+  assert.ok(venice.categories.accommodation.mid > naples.categories.accommodation.mid);
+  // Lviv is closer to Kraków than Kyiv: overland by default.
+  assert.equal(defaultMode('UA', 'PL', 'Lviv', 'Kraków'), 'ground');
+  assert.equal(defaultMode('UA', 'PL', 'Kyiv', 'Kraków'), 'flight');
+  const t = getTicketOptions({ ...base, originCity: 'Lviv', destinationCity: 'Florence' });
+  assert.equal(t.route.fromCode, 'LWO');
+  assert.equal(t.route.toCode, 'FLR');
+  assert.equal(t.route.toCity, 'Florence');
+  const { demoSuggestions } = await import('../src/services/suggestionsService.js');
+  const sug = demoSuggestions({ destination: 'IT', destinationCity: 'Florence', startDate: '2026-10-25', days: 5, travellers: 2, lang: 'uk' });
+  assert.ok(sug.groups.stay[0].links[0].url.includes('Florence'));
+});

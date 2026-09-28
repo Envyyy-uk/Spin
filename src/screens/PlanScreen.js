@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Animated, Easing, Linking, Platform, Share, StyleSheet, Text, View } from 'react-native';
 import { useI18n } from '../i18n';
-import { COUNTRIES, countryName, getCountry, sortedCountries } from '../data/countries';
+import { COUNTRIES, countryName, sortedCountries } from '../data/countries';
 import { formatDate, formatMoney, formatMoneyRange, formatNumber, formatPercent } from '../lib/format';
 import { todayISO, tripEnd } from '../lib/dates';
 import { budgetStatus, costDrivers, savingTips } from '../lib/budget';
@@ -17,6 +17,8 @@ import { RouteHeader } from '../components/RouteHeader';
 import { TicketsSection } from '../components/TicketsSection';
 import { AnimatedNumber, Reveal, USE_NATIVE_DRIVER, animateNextLayout, useAnimatedFraction, useBreakpoint, useReducedMotion, useAnimatedValue } from '../components/motion';
 import { SelectModal } from '../components/SelectModal';
+import { CitySelect } from '../components/CitySelect';
+import { place } from '../data/cities';
 import { DateField } from '../components/DateField';
 import { BudgetBar, STATUS_TONE } from '../components/BudgetBar';
 
@@ -150,7 +152,14 @@ function ResultCard({ state, dispatch, derived, onRespin }) {
           {countryName(setup.origin, lang)} → {countryName(trip.destination, lang)}
         </Text>
       </View>
-      <RouteHeader origin={setup.origin} destination={trip.destination} km={distanceKm(getCountry(setup.origin), getCountry(trip.destination))} compact={isPhone} />
+      <RouteHeader
+        origin={setup.origin}
+        destination={trip.destination}
+        originCity={trip.originCity}
+        destinationCity={trip.destinationCity}
+        km={distanceKm(place(setup.origin, trip.originCity), place(trip.destination, trip.destinationCity))}
+        compact={isPhone}
+      />
       {!editing ? (
         <View style={styles.facts}>
           <Fact label={t('result.dates')} value={`${formatDate(trip.startDate, lang, 'short')} – ${formatDate(trip.endDate, lang)}`} />
@@ -171,6 +180,17 @@ function ResultCard({ state, dispatch, derived, onRespin }) {
               searchable
               onChange={(v) => dispatch({ type: 'select', patch: { destination: v } })}
             />
+          </Field>
+          <Field label={t('city.destination')} style={styles.editField}>
+            <CitySelect
+              countryCode={trip.destination}
+              value={state.selection.destinationCity}
+              onChange={(v) => dispatch({ type: 'select', patch: { destinationCity: v || null } })}
+              label={t('city.destination')}
+            />
+          </Field>
+          <Field label={t('city.origin')} style={styles.editField}>
+            <CitySelect countryCode={setup.origin} value={setup.originCity} onChange={(v) => dispatch({ type: 'setup', patch: { originCity: v } })} label={t('city.origin')} />
           </Field>
           {exact ? (
             <Field label={t('setup.start')} style={styles.editField}>
@@ -446,7 +466,7 @@ function SummaryCard({ trip, estimate, status, fx }) {
 
   const summaryText = [
     t('summary.textHeader'),
-    `${countryName(trip.origin, lang)} → ${countryName(trip.destination, lang)}`,
+    `${place(trip.origin, trip.originCity).city}, ${countryName(trip.origin, lang)} → ${place(trip.destination, trip.destinationCity).city}, ${countryName(trip.destination, lang)}`,
     `${formatDate(trip.startDate, lang)} – ${formatDate(trip.endDate, lang)} (${tp('plural.days', trip.days)})`,
     tp('plural.travellers', trip.travellers),
     trip.style ? `${t('result.style')}: ${t(`styles.${trip.style}`)}` : null,
@@ -484,6 +504,9 @@ function SummaryCard({ trip, estimate, status, fx }) {
       <Eyebrow>{t('summary.eyebrow')}</Eyebrow>
       <H2 style={{ marginTop: -space(2) }}>{t('summary.title')}</H2>
       <Text style={styles.summaryRoute}>
+        {place(trip.origin, trip.originCity).city} → {place(trip.destination, trip.destinationCity).city}
+      </Text>
+      <Text style={styles.summaryMeta}>
         {countryName(trip.origin, lang)} → {countryName(trip.destination, lang)}
       </Text>
       <Text style={styles.summaryMeta}>
@@ -549,7 +572,7 @@ function SumRow({ label, value, strong, color }) {
 function SuggestionsSection({ trip, fx }) {
   const { t, lang } = useI18n();
   const [attempt, setAttempt] = useState(0);
-  const key = `${trip.destination}|${trip.startDate}|${trip.days}|${trip.travellers}|${trip.style}|${trip.stay}|${lang}|${attempt}`;
+  const key = `${trip.destination}|${trip.destinationCity}|${trip.startDate}|${trip.days}|${trip.travellers}|${trip.style}|${trip.stay}|${lang}|${attempt}`;
   // Result of the latest request, tagged with the request key; a mismatch means "loading".
   const [result, setResult] = useState({ key: null, status: 'loading', data: null });
   const state = result.key === key ? result : { status: 'loading', data: null };

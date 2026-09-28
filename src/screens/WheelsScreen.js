@@ -11,6 +11,8 @@ import { Button, Chip, ErrorText, Field, Input, Notice, P, SectionHeader, Switch
 import { Icon } from '../components/Icon';
 import { Reveal, useBreakpoint, usePop } from '../components/motion';
 import { SelectModal } from '../components/SelectModal';
+import { CitySelect } from '../components/CitySelect';
+import { place } from '../data/cities';
 import { WheelCard } from '../components/WheelCard';
 
 /** Text for a numeric input that follows external changes (e.g. a wheel spin) without clobbering typing. */
@@ -108,13 +110,25 @@ export function WheelsScreen({ state, dispatch, derived }) {
           countText={t('wheel.destination.count', { count: destOptions.length, total: poolOptions.length })}
           error={destTooFew ? t('wheel.destination.tooFew') : null}
           manual={
-            <SelectModal
-              label={t('wheel.destination.title')}
-              value={selection.destination}
-              options={poolOptions}
-              onChange={(v) => select({ destination: v })}
-              searchable
-            />
+            <View style={{ gap: space(3) }}>
+              <SelectModal
+                label={t('wheel.destination.title')}
+                value={selection.destination}
+                options={poolOptions}
+                onChange={(v) => select({ destination: v })}
+                searchable
+              />
+              {selection.destination ? (
+                <Field label={t('city.destination')} icon="pin" hint={t('city.hint')} style={{ marginBottom: 0 }}>
+                  <CitySelect
+                    countryCode={selection.destination}
+                    value={selection.destinationCity}
+                    onChange={(v) => select({ destinationCity: v || null })}
+                    label={t('city.destination')}
+                  />
+                </Field>
+              ) : null}
+            </View>
           }
           settings={
             <>
@@ -337,7 +351,7 @@ export function WheelsFooter({ state, derived, onBack, onShowPlan }) {
     m === 'destination' ? t('wheel.destination.title') : m === 'duration' ? t('wheel.duration.title') : t('wheel.budget.title'),
   );
   const pills = [
-    { key: 'destination', icon: 'globe', label: t('result.destination'), value: selection.destination ? countryName(selection.destination, lang) : null },
+    { key: 'destination', icon: 'globe', label: t('result.destination'), value: selection.destination ? `${countryName(selection.destination, lang)} · ${place(selection.destination, selection.destinationCity).city}` : null },
     { key: 'duration', icon: 'calendar', label: t('result.duration'), value: derived.days ? tp('plural.days', derived.days) : null },
     { key: 'budget', icon: 'wallet', label: t('result.budget'), value: selection.budget > 0 ? formatMoney(selection.budget, setup.currency, lang) : null },
   ];

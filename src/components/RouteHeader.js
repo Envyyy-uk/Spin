@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useI18n } from '../i18n';
-import { countryName, getCountry } from '../data/countries';
+import { countryName } from '../data/countries';
+import { place } from '../data/cities';
 import { formatNumber } from '../lib/format';
 import { colors, fontFamily, space } from '../theme';
 import { Icon } from './Icon';
@@ -12,12 +13,12 @@ import { USE_NATIVE_DRIVER, usePop, useReducedMotion, useAnimatedValue } from '.
  * Boarding-pass style route: ORIGIN ——✈—— DESTINATION.
  * The plane flies along the arc and the destination "pops" when it changes.
  */
-export function RouteHeader({ origin, destination, km, compact }) {
+export function RouteHeader({ origin, destination, originCity, destinationCity, km, compact }) {
   const { lang } = useI18n();
   const reduced = useReducedMotion();
   const [arcWidth, setArcWidth] = useState(0);
   const progress = useAnimatedValue(1);
-  const pop = usePop(destination);
+  const pop = usePop(`${destination}|${destinationCity || ''}`);
 
   useEffect(() => {
     if (reduced) {
@@ -26,10 +27,8 @@ export function RouteHeader({ origin, destination, km, compact }) {
     }
     progress.setValue(0);
     Animated.timing(progress, { toValue: 1, duration: 1300, easing: Easing.inOut(Easing.cubic), useNativeDriver: USE_NATIVE_DRIVER }).start();
-  }, [destination, reduced, progress]);
+  }, [destination, destinationCity, reduced, progress]);
 
-  const o = getCountry(origin);
-  const d = getCountry(destination);
   const arcH = 26;
   // Parametric arc: x linear, y follows a sine hump.
   const steps = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1];
@@ -45,7 +44,7 @@ export function RouteHeader({ origin, destination, km, compact }) {
     >
       <View style={styles.end}>
         <Text style={[styles.code, compact && styles.codeCompact]}>{origin}</Text>
-        <Text style={styles.city} numberOfLines={1}>{o?.hub}</Text>
+        <Text style={styles.city} numberOfLines={1}>{place(origin, originCity)?.city}</Text>
         <Text style={styles.country} numberOfLines={2}>{countryName(origin, lang)}</Text>
       </View>
       <View style={styles.arc} onLayout={(e) => setArcWidth(e.nativeEvent.layout.width)}>
@@ -68,7 +67,7 @@ export function RouteHeader({ origin, destination, km, compact }) {
       </View>
       <Animated.View style={[styles.end, styles.endRight, { transform: [{ scale: pop }] }]}>
         <Text style={[styles.code, styles.codeDest, compact && styles.codeCompact]}>{destination}</Text>
-        <Text style={[styles.city, { textAlign: 'right' }]} numberOfLines={1}>{d?.hub}</Text>
+        <Text style={[styles.city, { textAlign: 'right' }]} numberOfLines={1}>{place(destination, destinationCity)?.city}</Text>
         <Text style={[styles.country, { textAlign: 'right' }]} numberOfLines={2}>{countryName(destination, lang)}</Text>
       </Animated.View>
     </View>

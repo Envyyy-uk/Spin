@@ -12,6 +12,8 @@ import { colors, fontFamily, radius, shadowRaised, space, type } from '../theme'
 import { Badge, Button, Card, ErrorText, Eyebrow, Field, H3, Input, Notice, P, SectionHeader, Segmented, Touchable } from '../components/ui';
 import { Icon } from '../components/Icon';
 import { SelectModal } from '../components/SelectModal';
+import { CitySelect } from '../components/CitySelect';
+import { place } from '../data/cities';
 import { DateField } from '../components/DateField';
 import { BudgetBar, STATUS_TONE } from '../components/BudgetBar';
 import { RouteHeader } from '../components/RouteHeader';
@@ -56,6 +58,8 @@ export function CalculatorScreen({ state, dispatch, onOpenPlan }) {
     ? calculateNeeds({
         origin: calc.origin,
         destination: calc.destination,
+        originCity: calc.originCity || null,
+        destinationCity: calc.destinationCity || null,
         startDate: calc.startDate,
         endDate: calc.endDate,
         travellers: people,
@@ -85,9 +89,19 @@ export function CalculatorScreen({ state, dispatch, onOpenPlan }) {
         <Field label={t('setup.origin')} icon="pin" error={err('origin')} style={styles.formCol}>
           <SelectModal label={t('setup.origin')} value={calc.origin} options={countryOptions} searchable onChange={(v) => set({ origin: v })} error={err('origin')} />
         </Field>
+        <Field label={t('city.origin')} icon="pin" style={styles.formCol}>
+          <CitySelect countryCode={calc.origin} value={calc.originCity} onChange={(v) => set({ originCity: v })} label={t('city.origin')} disabled={!calc.origin} />
+        </Field>
+      </View>
+      <View style={styles.formRow}>
         <Field label={t('calc.destination')} icon="globe" error={err('destination')} style={styles.formCol}>
           <SelectModal label={t('calc.destination')} value={calc.destination} options={destOptions} searchable onChange={(v) => set({ destination: v })} error={err('destination')} />
         </Field>
+        {calc.destination ? (
+          <Field label={t('city.destination')} icon="globe" hint={t('city.hint')} style={styles.formCol}>
+            <CitySelect countryCode={calc.destination} value={calc.destinationCity} onChange={(v) => set({ destinationCity: v })} label={t('city.destination')} />
+          </Field>
+        ) : null}
       </View>
       <View style={styles.formRow}>
         <Field label={t('setup.start')} icon="calendar" error={err('startDate')} style={styles.formCol}>
@@ -160,7 +174,9 @@ export function CalculatorScreen({ state, dispatch, onOpenPlan }) {
         <RouteHeader
           origin={calc.origin}
           destination={calc.destination}
-          km={distanceKm(getCountry(calc.origin), getCountry(calc.destination))}
+          originCity={calc.originCity || null}
+          destinationCity={calc.destinationCity || null}
+          km={distanceKm(place(calc.origin, calc.originCity), place(calc.destination, calc.destinationCity))}
           compact={isPhone}
         />
         <View style={{ gap: space(1) }}>
@@ -310,6 +326,8 @@ export function CalculatorScreen({ state, dispatch, onOpenPlan }) {
       ? {
           origin: calc.origin,
           destination: calc.destination,
+          originCity: calc.originCity || null,
+          destinationCity: calc.destinationCity || null,
           startDate: calc.startDate,
           days: result.days,
           travellers: people,
@@ -334,7 +352,7 @@ export function CalculatorScreen({ state, dispatch, onOpenPlan }) {
       ) : null}
       {valid && result ? (
         <Text style={styles.footnote}>
-          {t('calc.footnote', { from: countryName(calc.origin, lang), to: countryName(calc.destination, lang) })}
+          {t('calc.footnote', { from: `${place(calc.origin, calc.originCity).city}, ${countryName(calc.origin, lang)}`, to: `${place(calc.destination, calc.destinationCity).city}, ${countryName(calc.destination, lang)}` })}
         </Text>
       ) : null}
     </View>
