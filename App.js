@@ -9,11 +9,11 @@ import { getCountry } from './src/data/countries';
 import { todayISO } from './src/lib/dates';
 import { useTripStore } from './src/state/store';
 import { derive } from './src/state/derived';
-import { colors, fontFamily, maxContentWidth, radius, space, wheelPalette } from './src/theme';
+import { colors, fontFamily, maxContentWidth, radius, shadowRaised, space, wheelPalette } from './src/theme';
 import { LanguageSwitcher } from './src/components/LanguageSwitcher';
 import { Touchable } from './src/components/ui';
 import { Icon } from './src/components/Icon';
-import { StepTransition, useAnimatedFraction, useBreakpoint } from './src/components/motion';
+import { CardTransition, useAnimatedFraction, useBreakpoint } from './src/components/motion';
 import { Hero } from './src/components/Hero';
 import { SetupScreen } from './src/screens/SetupScreen';
 import { WheelsFooter, WheelsScreen } from './src/screens/WheelsScreen';
@@ -116,7 +116,7 @@ function ModeTabs({ mode, onRoulette, onWheel, onCalc, full }) {
     { key: 'calc', icon: 'wallet', label: t('nav.modeCalc'), onPress: onCalc },
   ];
   return (
-    <View style={[styles.modeTabs, full && styles.modeTabsFull]} accessibilityRole="tablist" aria-label={t('nav.modes')}>
+    <View style={[styles.modeTabs, full ? styles.modeTabsFull : styles.modeTabsCenter]} accessibilityRole="tablist" aria-label={t('nav.modes')}>
       {tabs.map((tab) => {
         const active = tab.key === mode;
         return (
@@ -146,7 +146,9 @@ function Planner() {
   const today = todayISO();
   const derived = useMemo(() => derive(state, today), [state, today]);
   const scrollRef = useRef(null);
-  const { isPhone } = useBreakpoint();
+  const { isPhone, width } = useBreakpoint();
+  // Mode tabs share the header row only when there is room for them.
+  const tabsInline = width >= 900;
 
   const canGo = (s) => s === 'home' || s === 'setup' || s === 'calc' || s === 'roulette' || (s === 'wheels' && derived.setupCheck.valid) || (s === 'plan' && derived.trip != null);
   const go = (s) => {
@@ -174,6 +176,26 @@ function Planner() {
     scrollRef.current?.scrollTo?.({ y: 0, animated: false });
   }, [step]);
 
+  // Each screen, rendered by key so a leaving screen can animate out as a card.
+  const renderStep = (key) => {
+    switch (key) {
+      case 'home':
+        return <Hero onRoulette={() => go('roulette')} onStart={() => go('setup')} onCalc={() => go('calc')} hasProgress={!!resumeTarget} onResume={() => resumeTarget && go(resumeTarget)} />;
+      case 'setup':
+        return <SetupScreen state={state} dispatch={dispatch} derived={derived} onContinue={() => go('wheels')} />;
+      case 'wheels':
+        return <WheelsScreen state={state} dispatch={dispatch} derived={derived} />;
+      case 'roulette':
+        return <RouletteScreen state={state} dispatch={dispatch} onOpenPlan={() => dispatch({ type: 'step', step: 'plan' })} />;
+      case 'calc':
+        return <CalculatorScreen state={state} dispatch={dispatch} onOpenPlan={() => dispatch({ type: 'step', step: 'plan' })} />;
+      case 'plan':
+        return derived.trip ? <PlanScreen state={state} dispatch={dispatch} derived={derived} onRespin={() => go(source === 'roulette' ? 'roulette' : source === 'calc' ? 'calc' : 'wheels')} /> : null;
+      default:
+        return null;
+    }
+  };
+
   if (!ready || !hydrated) {
     return (
       <View style={styles.loading} accessibilityLiveRegion="polite">
@@ -185,7 +207,7 @@ function Planner() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      <View style={styles.header} accessibilityRole="banner">
+      <View style={[styles.header, isPhone && styles.headerPhone]} accessibilityRole="banner">
         <View style={styles.headerInner}>
           <Touchable
             accessibilityRole="link"
@@ -196,29 +218,22 @@ function Planner() {
             <LogoMark />
             <View style={{ flexShrink: 1 }}>
               <Text style={styles.brandName}>{t('app.name')}</Text>
-              {!isPhone ? (
+              {width >= 1024 ? (
                 <Text style={styles.tagline} numberOfLines={1}>
                   {t('app.tagline')}
                 </Text>
               ) : null}
             </View>
           </Touchable>
-          {!isPhone ? modeTabs(false) : null}
+          {tabsInline ? modeTabs(false) : null}
           <LanguageSwitcher />
         </View>
-        {isPhone ? <View style={styles.modeTabsRow}>{modeTabs(true)}</View> : null}
+        {!tabsInline ? <View style={styles.modeTabsRow}>{modeTabs(isPhone)}</View> : null}
       </View>
-      <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={[styles.scrollContent, step === 'wheels' && { paddingBottom: space(32) }]} keyboardShouldPersistTaps="handled">
+      <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={[styles.scrollContent, isPhone && styles.scrollContentPhone, step === 'wheels' && { paddingBottom: isPhone ? space(30) : space(32) }]} keyboardShouldPersistTaps="handled">
         <View style={styles.container} accessibilityRole="main">
           {['setup', 'wheels'].includes(step) || (step === 'plan' && source === 'wheel') ? <StepNav step={step} canGo={canGo} onGo={go} /> : null}
-          <StepTransition stepKey={step} direction={direction}>
-            {step === 'home' ? <Hero onRoulette={() => go('roulette')} onStart={() => go('setup')} onCalc={() => go('calc')} hasProgress={!!resumeTarget} onResume={() => resumeTarget && go(resumeTarget)} /> : null}
-            {step === 'setup' ? <SetupScreen state={state} dispatch={dispatch} derived={derived} onContinue={() => go('wheels')} /> : null}
-            {step === 'wheels' ? <WheelsScreen state={state} dispatch={dispatch} derived={derived} /> : null}
-            {step === 'roulette' ? <RouletteScreen state={state} dispatch={dispatch} onOpenPlan={() => dispatch({ type: 'step', step: 'plan' })} /> : null}
-            {step === 'calc' ? <CalculatorScreen state={state} dispatch={dispatch} onOpenPlan={() => dispatch({ type: 'step', step: 'plan' })} /> : null}
-            {step === 'plan' ? <PlanScreen state={state} dispatch={dispatch} derived={derived} onRespin={() => go(source === 'roulette' ? 'roulette' : source === 'calc' ? 'calc' : 'wheels')} /> : null}
-          </StepTransition>
+          <CardTransition stepKey={step} direction={direction} render={renderStep} cardStyle={styles.screenCard} />
           <Text style={styles.footer} accessibilityRole={Platform.OS === 'web' ? 'contentinfo' : undefined}>
             {t('app.footer')}
           </Text>
@@ -253,17 +268,21 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   headerInner: { width: '100%', maxWidth: maxContentWidth, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space(3) },
-  brand: { flexDirection: 'row', alignItems: 'center', gap: space(2.5), flexShrink: 1, borderRadius: radius.md, paddingVertical: 2, paddingRight: space(2) },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: space(2.5), flexShrink: 0, borderRadius: radius.md, paddingVertical: 2, paddingRight: space(2) },
   brandName: { fontFamily, color: colors.text, fontSize: 20, fontWeight: '800', letterSpacing: -0.4 },
   tagline: { fontFamily, color: colors.textMuted, fontSize: 12.5 },
   scroll: { flex: 1, backgroundColor: colors.bg },
+  scrollContentPhone: { paddingTop: space(3) },
   scrollContent: { paddingHorizontal: space(4), paddingTop: space(5), paddingBottom: space(14) },
   container: { width: '100%', maxWidth: maxContentWidth, alignSelf: 'center', gap: space(5) },
+  screenCard: { backgroundColor: colors.bg, borderRadius: radius.xl, ...shadowRaised },
   modeTabs: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: radius.pill, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border },
   modeTabsFull: { alignSelf: 'stretch' },
-  modeTabsRow: { width: '100%', maxWidth: maxContentWidth, alignSelf: 'center', marginTop: space(3) },
+  modeTabsCenter: { alignSelf: 'center' },
+  headerPhone: { paddingVertical: space(2) },
+  modeTabsRow: { width: '100%', maxWidth: maxContentWidth, alignSelf: 'center', marginTop: space(2) },
   modeTab: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space(1.5), minHeight: 38, paddingHorizontal: space(3.5), borderRadius: radius.pill, ...(Platform.OS === 'web' ? { cursor: 'pointer' } : null) },
-  modeTabCompact: { flexGrow: 1, flexShrink: 1, flexBasis: 'auto', paddingHorizontal: space(2) },
+  modeTabCompact: { flexGrow: 1, flexShrink: 1, flexBasis: 'auto', paddingHorizontal: space(2), minHeight: 34 },
   modeTabTextCompact: { fontSize: 12.5 },
   modeTabHover: { backgroundColor: colors.surface },
   modeTabActive: { backgroundColor: colors.primary },

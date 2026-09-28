@@ -210,7 +210,7 @@ export function RouletteScreen({ state, dispatch, onOpenPlan }) {
             disabled={!startValid}
             emptyText={t('roulette.waitDest')}
             countText={
-              dest ? (dest.noneFit ? t('roulette.challengeOnly', { count: dest.codes.length }) : t('roulette.feasible', { count: dest.codes.length })) : undefined
+              dest ? (dest.noneFit ? t('roulette.challengeOnly', { count: dest.codes.length }) : t('roulette.feasible', { count: dest.codes.length })) : t('wheels.notSpun')
             }
           />
         </Reveal>

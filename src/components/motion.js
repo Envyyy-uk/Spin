@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Easing, LayoutAnimation, Platform, Text, useWindowDimensions } from 'react-native';
+import { AccessibilityInfo, Animated, Easing, LayoutAnimation, Platform, Text, View, useWindowDimensions } from 'react-native';
 import { breakpoints, motion } from '../theme';
 
 export const USE_NATIVE_DRIVER = Platform.OS !== 'web';
@@ -60,53 +60,33 @@ export function useBreakpoint() {
 // Reveal: fade + rise when the element scrolls into view (web) or mounts (native)
 // ---------------------------------------------------------------------------
 
-export function Reveal({ children, delay = 0, distance = 18, style, ...rest }) {
+export function Reveal({ children, delay = 0, distance = 14, style, ...rest }) {
+  // Animates once on mount. It never waits for scrolling or an observer, so no
+  // content can stay hidden (embedded web views don't always report visibility),
+  // and it starts from a partly visible state.
   const reduced = useReducedMotion();
   const progress = useAnimatedValue(reduced ? 1 : 0);
-  const ref = useRef(null);
-  const started = useRef(false);
 
   useEffect(() => {
     if (reduced) {
       progress.setValue(1);
-      return undefined;
+      return;
     }
-    const run = () => {
-      if (started.current) return;
-      started.current = true;
-      Animated.timing(progress, {
-        toValue: 1,
-        duration: motion.slow,
-        delay,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: USE_NATIVE_DRIVER,
-      }).start();
-    };
-    const node = ref.current;
-    if (Platform.OS === 'web' && typeof IntersectionObserver !== 'undefined' && node instanceof Element) {
-      const io = new IntersectionObserver(
-        (entries) => {
-          if (entries.some((e) => e.isIntersecting)) {
-            run();
-            io.disconnect();
-          }
-        },
-        { rootMargin: '0px 0px -8% 0px', threshold: 0.05 },
-      );
-      io.observe(node);
-      return () => io.disconnect();
-    }
-    run();
-    return undefined;
+    Animated.timing(progress, {
+      toValue: 1,
+      duration: motion.slow,
+      delay: Math.min(delay, 240),
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: USE_NATIVE_DRIVER,
+    }).start();
   }, [reduced, delay, progress]);
 
   return (
     <Animated.View
-      ref={ref}
       style={[
         style,
         {
-          opacity: progress,
+          opacity: progress.interpolate({ inputRange: [0, 1], outputRange: [0.35, 1] }),
           transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [distance, 0] }) }],
         },
       ]}
@@ -156,6 +136,80 @@ export function StepTransition({ stepKey, direction = 1, children, style }) {
     >
       {children}
     </Animated.View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// CardTransition: the new screen slides in as a card over the previous one,
+// which steps back (scales down and fades). Direction follows the navigation.
+// ---------------------------------------------------------------------------
+
+const CARD_MS = 460;
+
+export function CardTransition({ stepKey, direction = 1, render, cardStyle }) {
+  const reduced = useReducedMotion();
+  const enter = useAnimatedValue(1);
+  const leave = useAnimatedValue(0);
+  const [shownKey, setShownKey] = useState(stepKey);
+  const [leaving, setLeaving] = useState(null);
+
+  // Derive the leaving screen during render when the key changes.
+  if (stepKey !== shownKey) {
+    setLeaving(reduced ? null : { key: shownKey, direction });
+    setShownKey(stepKey);
+  }
+
+  const leavingKey = leaving?.key;
+  useEffect(() => {
+    if (!leavingKey) return;
+    enter.setValue(0);
+    leave.setValue(0);
+    Animated.parallel([
+      Animated.timing(enter, { toValue: 1, duration: CARD_MS, easing: Easing.out(Easing.cubic), useNativeDriver: USE_NATIVE_DRIVER }),
+      Animated.timing(leave, { toValue: 1, duration: CARD_MS, easing: Easing.out(Easing.quad), useNativeDriver: USE_NATIVE_DRIVER }),
+    ]).start(() => setLeaving(null));
+  }, [leavingKey, enter, leave]);
+
+  const dir = leaving ? leaving.direction : 1;
+  return (
+    <View style={{ position: 'relative' }}>
+      {leaving ? (
+        <Animated.View
+          pointerEvents="none"
+          aria-hidden
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            opacity: leave.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
+            transform: [
+              { translateX: leave.interpolate({ inputRange: [0, 1], outputRange: [0, -40 * dir] }) },
+              { scale: leave.interpolate({ inputRange: [0, 1], outputRange: [1, 0.93] }) },
+            ],
+          }}
+        >
+          {render(leaving.key)}
+        </Animated.View>
+      ) : null}
+      <Animated.View
+        style={[
+          leaving ? cardStyle : null,
+          {
+            opacity: enter.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 1, 1] }),
+            transform: [
+              { translateX: enter.interpolate({ inputRange: [0, 1], outputRange: [90 * dir, 0] }) },
+              { translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [28, 0] }) },
+              { scale: enter.interpolate({ inputRange: [0, 1], outputRange: [0.96, 1] }) },
+            ],
+          },
+        ]}
+      >
+        {render(stepKey)}
+      </Animated.View>
+    </View>
   );
 }
 

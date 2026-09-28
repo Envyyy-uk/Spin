@@ -326,14 +326,14 @@ export function WheelsScreen({ state, dispatch, derived }) {
   );
 }
 
-function TrayPill({ icon, label, value }) {
+function TrayPill({ icon, label, value, compact }) {
   const scale = usePop(value);
   const empty = value == null;
   return (
     <Animated.View style={[styles.pill, empty && styles.pillEmpty, { transform: [{ scale }] }]} accessible accessibilityLabel={`${label}: ${empty ? '—' : value}`}>
       <Icon name={icon} size={16} color={empty ? colors.textMuted : colors.primary} />
       <View style={{ flexShrink: 1 }}>
-        <Text style={styles.pillLabel} numberOfLines={1}>{label}</Text>
+        {!compact ? <Text style={styles.pillLabel} numberOfLines={1}>{label}</Text> : null}
         <Text style={[styles.pillValue, empty && { color: colors.textMuted }]} numberOfLines={1}>{empty ? '—' : value}</Text>
       </View>
     </Animated.View>
@@ -363,15 +363,15 @@ export function WheelsFooter({ state, derived, onBack, onShowPlan }) {
       <View style={[styles.footerInner, !isPhone && styles.footerInnerWide]}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tray} style={{ flexGrow: 1, flexShrink: 1 }}>
           {pills.map((p) => (
-            <TrayPill key={p.key} icon={p.icon} label={p.label} value={p.value} />
+            <TrayPill key={p.key} icon={p.icon} label={p.label} value={p.value} compact={isPhone} />
           ))}
         </ScrollView>
         <View style={styles.footerActions}>
           <Button variant="secondary" icon="arrowLeft" label={isPhone ? '' : t('nav.back')} accessibilityLabel={t('nav.back')} onPress={onBack} style={isPhone ? styles.iconOnly : null} />
-          <Button label={t('wheels.toPlan')} iconRight="arrowRight" onPress={onShowPlan} disabled={!canPlan} style={isPhone ? { flex: 1 } : null} />
+          <Button label={t('wheels.toPlan')} iconRight="arrowRight" onPress={onShowPlan} disabled={!canPlan} accessibilityHint={!canPlan && missingLabels.length ? t('wheels.missing', { list: missingLabels.join(', ') }) : undefined} style={isPhone ? { flex: 1 } : null} />
         </View>
       </View>
-      {!canPlan && missingLabels.length ? (
+      {!canPlan && missingLabels.length && !isPhone ? (
         <Text style={styles.missing} accessibilityLiveRegion="polite" aria-live="polite">
           {t('wheels.missing', { list: missingLabels.join(', ') })}
         </Text>
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space(4),
     ...shadowRaised,
   },
-  footerInner: { width: '100%', maxWidth: maxContentWidth, alignSelf: 'center', gap: space(3) },
+  footerInner: { width: '100%', maxWidth: maxContentWidth, alignSelf: 'center', gap: space(2) },
   footerInnerWide: { flexDirection: 'row', alignItems: 'center' },
   footerActions: { flexDirection: 'row', gap: space(2), alignItems: 'center' },
   iconOnly: { paddingHorizontal: space(3.5), minWidth: 48 },
