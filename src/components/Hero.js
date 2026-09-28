@@ -110,7 +110,7 @@ function PreviewWheel({ size }) {
   );
 }
 
-export function Hero({ onStart, hasProgress, onResume }) {
+export function Hero({ onStart, onCalc, hasProgress, onResume }) {
   const { t } = useI18n();
   const { bp, width } = useBreakpoint();
   const wide = width >= 900;
@@ -144,7 +144,8 @@ export function Hero({ onStart, hasProgress, onResume }) {
               <P style={styles.heroLead}>{t('hero.lead')}</P>
             </Reveal>
             <Reveal delay={240} style={styles.ctaRow}>
-              <Button large variant="accent" label={t('hero.cta')} iconRight="arrowRight" onPress={onStart} />
+              <Button large variant="accent" icon="spin" label={t('hero.cta')} iconRight="arrowRight" onPress={onStart} />
+              <Button large variant="light" icon="wallet" label={t('hero.ctaCalc')} onPress={onCalc} />
               {hasProgress ? <Button large variant="light" icon="map" label={t('hero.resume')} onPress={onResume} /> : null}
             </Reveal>
             <Reveal delay={320} style={styles.stats}>

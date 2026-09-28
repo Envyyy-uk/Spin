@@ -1,5 +1,39 @@
 // Italiano
 export default {
+  calc: {
+    eyebrow: "Calcolatore",
+    title: "Quanto costerà davvero il viaggio?",
+    lead: "Scegli tu paese e date, senza ruote. Vedi quanto serve a tre livelli di comfort e se i tuoi soldi bastano.",
+    destination: "Paese di destinazione",
+    amount: "Soldi che hai ({currency}, facoltativo)",
+    amountHint: "Totale per tutto il gruppo. Lascia vuoto per vedere solo i costi.",
+    amountPlaceholder: "es. 2000",
+    needTitle: "Ti serviranno circa",
+    perDay: "Al giorno",
+    recommended: "Per viaggiare senza pensieri, metti in conto circa {amount} (stima alta del livello standard).",
+    enough: "Bastano: avanzano circa {amount}",
+    short: "Non bastano: mancano circa {amount}",
+    affordable: "Con questa cifra arrivi al livello «{level}».",
+    notAffordable: "Questa cifra non copre nemmeno il livello economico (circa {amount}).",
+    levelsTitle: "Tre modi di fare questo viaggio",
+    selected: "Scelto",
+    levelDesc: {
+      budget: "Ostelli e affittacamere, cibo semplice, attrazioni gratuite.",
+      standard: "Hotel di fascia media, caffè e ristoranti, qualche attività a pagamento.",
+      comfort: "Hotel di alta categoria, ristoranti e più esperienze a pagamento.",
+    },
+    fits: "Bastano",
+    missing: "Mancano {amount}",
+    breakdownTitle: "Dove vanno i soldi",
+    shareOfTotal: "{share} del totale",
+    openPlan: "Apri il piano completo con idee",
+    emptyTitle: "Compila il viaggio",
+    emptyDesc: "Scegli partenza e destinazione, date e numero di viaggiatori. La stima appare subito.",
+    footnote: "Stima approssimativa per {from} → {to}. Non sono prezzi attuali.",
+    errors: {
+      destination: "Scegli il paese di destinazione.",
+    },
+  },
   tickets: {
     eyebrow: "Biglietti",
     title: "Andata e ritorno",
@@ -39,6 +73,7 @@ export default {
     tip3: "Sotto i 700 km circa, autobus o treno costano spesso meno dell’aereo.",
   },
   hero: {
+    ctaCalc: "Calcola un viaggio",
     eyebrow: 'Pianificatore di viaggi',
     title: 'Lascia che la ruota scelga il tuo prossimo viaggio.',
     lead: 'Imposta date, gruppo e budget, gira per una destinazione e ottieni una stima onesta di quanto potrebbe costare.',
@@ -74,6 +109,9 @@ export default {
     loading: 'Caricamento…',
   },
   nav: {
+    modeWheel: "Ruota",
+    modeCalc: "Calcolatore",
+    modes: "Modalità di pianificazione",
     home: 'Home',
     setup: 'Dati del viaggio',
     wheels: 'Gira',

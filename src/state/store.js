@@ -4,7 +4,7 @@ import { addDays, todayISO } from '../lib/dates';
 import { getCurrency } from '../data/currencies';
 import { getCountry } from '../data/countries';
 
-const STEP_ORDER = ['home', 'setup', 'wheels', 'plan'];
+const STEP_ORDER = ['home', 'setup', 'wheels', 'plan', 'calc'];
 
 export const STYLE_KEYS = ['sea', 'culture', 'nature', 'food', 'adventure', 'relax'];
 const STORAGE_KEY = 'spin.state.v1';
@@ -35,6 +35,20 @@ export function initialState(today = todayISO(), origin = '') {
     styleSettings: { enabled: false, options: [...STYLE_KEYS] },
     selection: { destination: null, duration: null, budget: null, style: null, tripStart: null },
     plan: { stay: 'standard', transport: 'standard', mode: null },
+    // Stand-alone "how much do I need" calculator (no wheels).
+    calc: {
+      origin,
+      destination: '',
+      startDate: addDays(today, 30),
+      endDate: addDays(today, 36),
+      travellers: '2',
+      currency: 'EUR',
+      rate: '1',
+      amount: '',
+      stay: 'standard',
+      transport: 'standard',
+      mode: null,
+    },
     spinCount: 0,
   };
 }
@@ -99,6 +113,34 @@ export function reducer(state, action) {
       if (action.patch.destination && action.patch.destination !== state.selection.destination) next.plan = { ...state.plan, mode: null };
       return next;
     }
+    case 'calc': {
+      const calc = { ...state.calc, ...action.patch };
+      const routeChanged =
+        (action.patch.origin && action.patch.origin !== state.calc.origin) ||
+        (action.patch.destination && action.patch.destination !== state.calc.destination);
+      if (routeChanged) calc.mode = null;
+      if (action.patch.origin && calc.destination === action.patch.origin) calc.destination = '';
+      return { ...state, calc };
+    }
+    case 'calcToPlan': {
+      // Open the calculator's trip as a full plan (budget = the amount given).
+      const c = state.calc;
+      return {
+        ...state,
+        setup: { ...state.setup, origin: c.origin, dateMode: 'exact', startDate: c.startDate, endDate: c.endDate, travellers: c.travellers, currency: c.currency, rate: c.rate },
+        selection: { ...state.selection, destination: c.destination, budget: action.budget, duration: null, tripStart: null },
+        plan: { ...state.plan, stay: c.stay, transport: c.transport, mode: c.mode },
+      };
+    }
+    case 'calcCurrency': {
+      const next = getCurrency(action.code);
+      const factor = next.rate / (Number(state.calc.rate) || 1);
+      const amount = Number(state.calc.amount);
+      return {
+        ...state,
+        calc: { ...state.calc, currency: next.code, rate: String(next.rate), amount: amount > 0 ? String(roundNice(amount * factor)) : state.calc.amount },
+      };
+    }
     case 'plan':
       return { ...state, plan: { ...state.plan, ...action.patch } };
     case 'spinAll':
@@ -114,10 +156,12 @@ export function reducer(state, action) {
 function sanitize(saved, base) {
   if (!saved || typeof saved !== 'object') return null;
   const out = {};
-  for (const key of ['setup', 'destSettings', 'durationSettings', 'budgetSettings', 'styleSettings', 'selection', 'plan']) {
+  for (const key of ['setup', 'destSettings', 'durationSettings', 'budgetSettings', 'styleSettings', 'selection', 'plan', 'calc']) {
     if (saved[key] && typeof saved[key] === 'object') out[key] = { ...base[key], ...saved[key] };
   }
   if (out.setup && out.setup.origin && !getCountry(out.setup.origin)) out.setup.origin = '';
+  if (out.calc && out.calc.origin && !getCountry(out.calc.origin)) out.calc.origin = '';
+  if (out.calc && out.calc.destination && !getCountry(out.calc.destination)) out.calc.destination = '';
   if (out.destSettings && !Array.isArray(out.destSettings.excluded)) out.destSettings.excluded = [];
   if (out.styleSettings && !Array.isArray(out.styleSettings.options)) out.styleSettings.options = [...STYLE_KEYS];
   // The step is not restored: every launch opens on the home screen, which offers “continue”.

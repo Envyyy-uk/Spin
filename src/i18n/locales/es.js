@@ -1,5 +1,39 @@
 // Español
 export default {
+  calc: {
+    eyebrow: "Calculadora",
+    title: "¿Cuánto costará de verdad el viaje?",
+    lead: "Elige tú el país y las fechas, sin ruedas. Verás cuánto necesitas en tres niveles de comodidad y si tu dinero alcanza.",
+    destination: "País de destino",
+    amount: "Dinero que tienes ({currency}, opcional)",
+    amountHint: "Total para todo el grupo. Déjalo vacío para ver solo los costes.",
+    amountPlaceholder: "p. ej. 2000",
+    needTitle: "Necesitarás unos",
+    perDay: "Por día",
+    recommended: "Para viajar sin agobios, cuenta con unos {amount} (estimación alta del nivel estándar).",
+    enough: "Alcanza: sobran unos {amount}",
+    short: "No alcanza: faltan unos {amount}",
+    affordable: "Con esta cantidad llegas al nivel «{level}».",
+    notAffordable: "Esta cantidad no cubre ni el nivel económico (unos {amount}).",
+    levelsTitle: "Tres formas de hacer este viaje",
+    selected: "Elegido",
+    levelDesc: {
+      budget: "Albergues y casas de huéspedes, comida sencilla, visitas gratuitas.",
+      standard: "Hoteles de gama media, cafés y restaurantes, algunas actividades de pago.",
+      comfort: "Hoteles de categoría superior, restaurantes y más experiencias de pago.",
+    },
+    fits: "Alcanza",
+    missing: "Faltan {amount}",
+    breakdownTitle: "En qué se va el dinero",
+    shareOfTotal: "{share} del total",
+    openPlan: "Abrir el plan completo con ideas",
+    emptyTitle: "Completa el viaje",
+    emptyDesc: "Elige origen y destino, fechas y número de viajeros. La estimación aparece al instante.",
+    footnote: "Estimación aproximada para {from} → {to}. No son precios actuales.",
+    errors: {
+      destination: "Elige el país de destino.",
+    },
+  },
   tickets: {
     eyebrow: "Billetes",
     title: "Ida y vuelta",
@@ -39,6 +73,7 @@ export default {
     tip3: "Para trayectos de menos de unos 700 km, el autobús o el tren suelen salir más baratos que el avión.",
   },
   hero: {
+    ctaCalc: "Calcular un viaje",
     eyebrow: 'Planificador de viajes',
     title: 'Deja que la rueda elija tu próximo viaje.',
     lead: 'Indica fechas, grupo y presupuesto, gira para elegir destino y obtén una estimación honesta de lo que podría costar.',
@@ -74,6 +109,9 @@ export default {
     loading: 'Cargando…',
   },
   nav: {
+    modeWheel: "Ruleta",
+    modeCalc: "Calculadora",
+    modes: "Modo de planificación",
     home: 'Inicio',
     setup: 'Datos del viaje',
     wheels: 'Girar',

@@ -1,5 +1,39 @@
 // Français
 export default {
+  calc: {
+    eyebrow: "Calculateur",
+    title: "Combien coûtera vraiment le voyage ?",
+    lead: "Choisissez vous-même le pays et les dates, sans roue. Voyez le budget nécessaire à trois niveaux de confort et si votre argent suffit.",
+    destination: "Pays de destination",
+    amount: "Argent disponible ({currency}, facultatif)",
+    amountHint: "Total pour tout le groupe. Laissez vide pour voir seulement les coûts.",
+    amountPlaceholder: "ex. 2000",
+    needTitle: "Il vous faudra environ",
+    perDay: "Par jour",
+    recommended: "Pour voyager sereinement, prévoyez environ {amount} (estimation haute du niveau standard).",
+    enough: "Suffisant : il restera environ {amount}",
+    short: "Insuffisant : il manque environ {amount}",
+    affordable: "Ce montant couvre le niveau « {level} ».",
+    notAffordable: "Ce montant ne couvre même pas le niveau économique (environ {amount}).",
+    levelsTitle: "Trois façons de faire ce voyage",
+    selected: "Choisi",
+    levelDesc: {
+      budget: "Auberges et chambres d’hôtes, repas simples, visites gratuites.",
+      standard: "Hôtels milieu de gamme, cafés et restaurants, quelques activités payantes.",
+      comfort: "Hôtels haut de gamme, restaurants et davantage d’expériences payantes.",
+    },
+    fits: "Suffisant",
+    missing: "Il manque {amount}",
+    breakdownTitle: "Où va l’argent",
+    shareOfTotal: "{share} du total",
+    openPlan: "Ouvrir le plan complet avec des idées",
+    emptyTitle: "Renseignez le voyage",
+    emptyDesc: "Choisissez le départ et la destination, les dates et le nombre de voyageurs. L’estimation s’affiche aussitôt.",
+    footnote: "Estimation approximative pour {from} → {to}. Pas de prix actuels.",
+    errors: {
+      destination: "Choisissez le pays de destination.",
+    },
+  },
   tickets: {
     eyebrow: "Billets",
     title: "Aller et retour",
@@ -39,6 +73,7 @@ export default {
     tip3: "Pour moins de 700 km environ, le bus ou le train est souvent moins cher que l’avion.",
   },
   hero: {
+    ctaCalc: "Calculer un voyage",
     eyebrow: 'Planificateur de voyage',
     title: 'Laissez la roue choisir votre prochain voyage.',
     lead: 'Indiquez vos dates, votre groupe et votre budget, lancez la roue pour une destination et obtenez une estimation honnête du coût possible.',
@@ -74,6 +109,9 @@ export default {
     loading: 'Chargement…',
   },
   nav: {
+    modeWheel: "Roue",
+    modeCalc: "Calculateur",
+    modes: "Mode de planification",
     home: 'Accueil',
     setup: 'Infos du voyage',
     wheels: 'Tourner',

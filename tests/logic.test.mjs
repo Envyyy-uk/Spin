@@ -168,3 +168,20 @@ test('overland options only where they make sense', () => {
   assert.ok(near.modes.ground.estimate.perPerson.mid < near.modes.flight.estimate.perPerson.mid);
   assert.ok(near.modes.ground.providers.some((p) => p.id === 'blablacar' && p.url.includes('db=2026-10-25') && p.url.includes('seats=2')));
 });
+
+test('calculator: levels are ordered and the amount is compared', async () => {
+  const { calculateNeeds } = await import('../src/lib/calculator.js');
+  const base = { origin: 'UA', destination: 'IT', startDate: '2026-10-25', endDate: '2026-10-31', travellers: 2, today: TODAY };
+  const r = calculateNeeds(base);
+  assert.equal(r.days, 7);
+  assert.equal(r.nights, 6);
+  assert.ok(r.levels.budget.total.mid < r.levels.standard.total.mid);
+  assert.ok(r.levels.standard.total.mid < r.levels.comfort.total.mid);
+  assert.equal(r.recommended, r.levels.standard.total.max);
+  assert.equal(r.comparison, null);
+  const withAmount = calculateNeeds({ ...base, amountEur: r.levels.standard.total.mid + 1 });
+  assert.equal(withAmount.affordable, 'standard');
+  assert.ok(withAmount.comparison.comfort.diff < 0);
+  assert.equal(calculateNeeds({ ...base, amountEur: 10 }).affordable, null);
+  assert.equal(calculateNeeds({ ...base, endDate: '2026-10-20' }), null);
+});

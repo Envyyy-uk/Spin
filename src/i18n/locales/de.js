@@ -1,5 +1,39 @@
 // Deutsch
 export default {
+  calc: {
+    eyebrow: "Rechner",
+    title: "Was kostet die Reise wirklich?",
+    lead: "Wähle Land und Daten selbst, ohne Räder. Sieh, was du auf drei Komfortstufen brauchst und ob dein Geld reicht.",
+    destination: "Zielland",
+    amount: "Verfügbares Geld ({currency}, optional)",
+    amountHint: "Gesamtsumme für die ganze Gruppe. Leer lassen, um nur die Kosten zu sehen.",
+    amountPlaceholder: "z. B. 2000",
+    needTitle: "Du brauchst etwa",
+    perDay: "Pro Tag",
+    recommended: "Für eine entspannte Reise plane etwa {amount} ein (obere Schätzung der Standardstufe).",
+    enough: "Reicht: es bleiben etwa {amount}",
+    short: "Reicht nicht: es fehlen etwa {amount}",
+    affordable: "Dieser Betrag reicht für die Stufe „{level}“.",
+    notAffordable: "Dieser Betrag reicht nicht einmal für die günstige Stufe (etwa {amount}).",
+    levelsTitle: "Drei Varianten dieser Reise",
+    selected: "Ausgewählt",
+    levelDesc: {
+      budget: "Hostels und Pensionen, einfaches Essen, kostenlose Sehenswürdigkeiten.",
+      standard: "Mittelklassehotels, Cafés und Restaurants, einige kostenpflichtige Aktivitäten.",
+      comfort: "Gehobene Hotels, Restaurants und mehr kostenpflichtige Erlebnisse.",
+    },
+    fits: "Reicht",
+    missing: "Es fehlen {amount}",
+    breakdownTitle: "Wohin das Geld geht",
+    shareOfTotal: "{share} der Summe",
+    openPlan: "Vollständigen Plan mit Ideen öffnen",
+    emptyTitle: "Reise ausfüllen",
+    emptyDesc: "Wähle Start und Ziel, Daten und Anzahl der Reisenden. Die Schätzung erscheint sofort.",
+    footnote: "Grobe Schätzung für {from} → {to}. Keine aktuellen Preise.",
+    errors: {
+      destination: "Wähle das Zielland.",
+    },
+  },
   tickets: {
     eyebrow: "Tickets",
     title: "Hin und zurück",
@@ -39,6 +73,7 @@ export default {
     tip3: "Bei Strecken unter etwa 700 km sind Bus oder Bahn oft günstiger als ein Flug.",
   },
   hero: {
+    ctaCalc: "Reise berechnen",
     eyebrow: 'Reiseplaner',
     title: 'Lass das Rad deine nächste Reise wählen.',
     lead: 'Lege Daten, Gruppe und Budget fest, dreh für ein Reiseziel und erhalte eine ehrliche Schätzung, was die Reise kosten könnte.',
@@ -74,6 +109,9 @@ export default {
     loading: 'Wird geladen…',
   },
   nav: {
+    modeWheel: "Glücksrad",
+    modeCalc: "Rechner",
+    modes: "Planungsmodus",
     home: 'Start',
     setup: 'Reisedaten',
     wheels: 'Drehen',

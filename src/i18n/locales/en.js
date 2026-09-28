@@ -1,5 +1,39 @@
 // English — default language and fallback for every missing key.
 export default {
+  calc: {
+    eyebrow: "Calculator",
+    title: "How much will the trip really cost?",
+    lead: "Pick the country and dates yourself, no wheels. See what you need at three comfort levels and whether your money is enough.",
+    destination: "Destination country",
+    amount: "Money you have ({currency}, optional)",
+    amountHint: "Total for the whole group. Leave empty to just see the costs.",
+    amountPlaceholder: "e.g. 2000",
+    needTitle: "You will need about",
+    perDay: "Per day",
+    recommended: "To travel without stress, plan for about {amount} (upper estimate at the standard level).",
+    enough: "Enough: about {amount} left",
+    short: "Not enough: about {amount} short",
+    affordable: "This amount covers the “{level}” level.",
+    notAffordable: "This amount does not cover even the budget level (about {amount}).",
+    levelsTitle: "Three ways to do this trip",
+    selected: "Selected",
+    levelDesc: {
+      budget: "Hostels and guesthouses, simple food, free sights.",
+      standard: "Mid-range hotels, cafés and restaurants, some paid activities.",
+      comfort: "Upscale hotels, restaurants and more paid experiences.",
+    },
+    fits: "Fits your amount",
+    missing: "{amount} short",
+    breakdownTitle: "Where the money goes",
+    shareOfTotal: "{share} of total",
+    openPlan: "Open the full plan with ideas",
+    emptyTitle: "Fill in the trip",
+    emptyDesc: "Choose where from and where to, the dates and the number of travellers. The estimate appears straight away.",
+    footnote: "Approximate estimate for {from} → {to}. Not live prices.",
+    errors: {
+      destination: "Choose the destination country.",
+    },
+  },
   tickets: {
     eyebrow: "Tickets",
     title: "Getting there and back",
@@ -39,6 +73,7 @@ export default {
     tip3: "For trips under about 700 km, a bus or train is often cheaper than flying.",
   },
   hero: {
+    ctaCalc: "Calculate a trip",
     eyebrow: 'Travel planner',
     title: 'Let the wheel choose your next trip.',
     lead: 'Set your dates, group and budget, spin for a destination, and get an honest estimate of what it could cost.',
@@ -74,6 +109,9 @@ export default {
     loading: 'Loading…',
   },
   nav: {
+    modeWheel: "Spin the wheel",
+    modeCalc: "Calculator",
+    modes: "Planning mode",
     home: 'Home',
     setup: 'Trip details',
     wheels: 'Spin',

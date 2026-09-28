@@ -18,6 +18,7 @@ import { Hero } from './src/components/Hero';
 import { SetupScreen } from './src/screens/SetupScreen';
 import { WheelsFooter, WheelsScreen } from './src/screens/WheelsScreen';
 import { PlanScreen } from './src/screens/PlanScreen';
+import { CalculatorScreen } from './src/screens/CalculatorScreen';
 
 function deviceCountry() {
   try {
@@ -105,6 +106,37 @@ function StepNav({ step, canGo, onGo }) {
   );
 }
 
+/** Top-level switch between the wheel flow and the stand-alone calculator. */
+function ModeTabs({ mode, onWheel, onCalc, full }) {
+  const { t } = useI18n();
+  const tabs = [
+    { key: 'wheel', icon: 'spin', label: t('nav.modeWheel'), onPress: onWheel },
+    { key: 'calc', icon: 'wallet', label: t('nav.modeCalc'), onPress: onCalc },
+  ];
+  return (
+    <View style={[styles.modeTabs, full && styles.modeTabsFull]} accessibilityRole="tablist" aria-label={t('nav.modes')}>
+      {tabs.map((tab) => {
+        const active = tab.key === mode;
+        return (
+          <Touchable
+            key={tab.key}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: active }}
+            aria-selected={active}
+            onPress={tab.onPress}
+            style={({ hovered }) => [styles.modeTab, full && { flex: 1 }, hovered && !active && styles.modeTabHover, active && styles.modeTabActive]}
+          >
+            <Icon name={tab.icon} size={16} color={active ? colors.onPrimary : colors.primaryDark} />
+            <Text style={[styles.modeTabText, active && { color: colors.onPrimary }]} numberOfLines={1}>
+              {tab.label}
+            </Text>
+          </Touchable>
+        );
+      })}
+    </View>
+  );
+}
+
 function Planner() {
   const { t, ready } = useI18n();
   const defaultOrigin = useMemo(() => deviceCountry(), []);
@@ -114,7 +146,7 @@ function Planner() {
   const scrollRef = useRef(null);
   const { isPhone } = useBreakpoint();
 
-  const canGo = (s) => s === 'home' || s === 'setup' || (s === 'wheels' && derived.setupCheck.valid) || (s === 'plan' && derived.trip != null);
+  const canGo = (s) => s === 'home' || s === 'setup' || s === 'calc' || (s === 'wheels' && derived.setupCheck.valid) || (s === 'plan' && derived.trip != null);
   const go = (s) => {
     if (canGo(s)) dispatch({ type: 'step', step: s });
   };
@@ -123,6 +155,10 @@ function Planner() {
   const direction = state.stepDirection || 1;
 
   const resumeTarget = derived.trip ? 'plan' : derived.setupCheck.valid && state.selection.destination ? 'wheels' : null;
+  const mode = step === 'calc' ? 'calc' : 'wheel';
+  const modeTabs = (full) => (
+    <ModeTabs mode={mode} full={full} onWheel={() => mode !== 'wheel' && go(resumeTarget || 'home')} onCalc={() => go('calc')} />
+  );
 
   useEffect(() => {
     scrollRef.current?.scrollTo?.({ y: 0, animated: false });
@@ -157,16 +193,19 @@ function Planner() {
               ) : null}
             </View>
           </Touchable>
+          {!isPhone ? modeTabs(false) : null}
           <LanguageSwitcher />
         </View>
+        {isPhone ? <View style={styles.modeTabsRow}>{modeTabs(true)}</View> : null}
       </View>
       <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={[styles.scrollContent, step === 'wheels' && { paddingBottom: space(32) }]} keyboardShouldPersistTaps="handled">
         <View style={styles.container} accessibilityRole="main">
-          {step !== 'home' ? <StepNav step={step} canGo={canGo} onGo={go} /> : null}
+          {step !== 'home' && step !== 'calc' ? <StepNav step={step} canGo={canGo} onGo={go} /> : null}
           <StepTransition stepKey={step} direction={direction}>
-            {step === 'home' ? <Hero onStart={() => go('setup')} hasProgress={!!resumeTarget} onResume={() => resumeTarget && go(resumeTarget)} /> : null}
+            {step === 'home' ? <Hero onStart={() => go('setup')} onCalc={() => go('calc')} hasProgress={!!resumeTarget} onResume={() => resumeTarget && go(resumeTarget)} /> : null}
             {step === 'setup' ? <SetupScreen state={state} dispatch={dispatch} derived={derived} onContinue={() => go('wheels')} /> : null}
             {step === 'wheels' ? <WheelsScreen state={state} dispatch={dispatch} derived={derived} /> : null}
+            {step === 'calc' ? <CalculatorScreen state={state} dispatch={dispatch} onOpenPlan={() => dispatch({ type: 'step', step: 'plan' })} /> : null}
             {step === 'plan' ? <PlanScreen state={state} dispatch={dispatch} derived={derived} onRespin={() => go('wheels')} /> : null}
           </StepTransition>
           <Text style={styles.footer} accessibilityRole={Platform.OS === 'web' ? 'contentinfo' : undefined}>
@@ -209,6 +248,13 @@ const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: colors.bg },
   scrollContent: { paddingHorizontal: space(4), paddingTop: space(5), paddingBottom: space(14) },
   container: { width: '100%', maxWidth: maxContentWidth, alignSelf: 'center', gap: space(5) },
+  modeTabs: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: radius.pill, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border },
+  modeTabsFull: { alignSelf: 'stretch' },
+  modeTabsRow: { width: '100%', maxWidth: maxContentWidth, alignSelf: 'center', marginTop: space(3) },
+  modeTab: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space(1.5), minHeight: 38, paddingHorizontal: space(3.5), borderRadius: radius.pill, ...(Platform.OS === 'web' ? { cursor: 'pointer' } : null) },
+  modeTabHover: { backgroundColor: colors.surface },
+  modeTabActive: { backgroundColor: colors.primary },
+  modeTabText: { fontFamily, fontSize: 14, fontWeight: '800', color: colors.primaryDark },
   stepsWrap: { gap: space(2) },
   progressTrack: { height: 3, borderRadius: 2, backgroundColor: colors.border, overflow: 'hidden', marginHorizontal: space(4) },
   progressFill: { height: 3, backgroundColor: colors.accent, borderRadius: 2 },

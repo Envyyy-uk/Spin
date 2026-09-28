@@ -692,7 +692,7 @@ function SuggestionCard({ item, trip, fx }) {
 // ------------------------------------------------------------------------------
 const CARD_ICONS = { stay: 'bed', activities: 'ticket', places: 'pin' };
 
-function CategoryRow({ catKey, name, amount, currency, share, meta }) {
+export function CategoryRow({ catKey, name, amount, currency, share, meta }) {
   const { lang } = useI18n();
   const width = useAnimatedFraction(Math.min(1, share));
   return (
